@@ -66,7 +66,19 @@
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        const firebaseConfig = JSON.parse(__firebase_config);
+        const firebaseConfig = {
+                              apiKey: "AIzaSyDdZ4NnOsYCn8Mbt4QkY8SiEjnvbwH_ucY",
+                              authDomain: "planner-financeiro-85c85.firebaseapp.com",
+                              projectId: "planner-financeiro-85c85",
+                              storageBucket: "planner-financeiro-85c85.firebasestorage.app",
+                              messagingSenderId: "481092436809",
+                              appId: "1:481092436809:web:f63a2a16bd35fd864c5098",
+                              measurementId: "G-LM7P7ZB655"
+                            };
+
+// Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
