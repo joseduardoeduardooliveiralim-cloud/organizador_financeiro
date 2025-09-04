@@ -66,8 +66,7 @@
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // Substitua com suas credenciais do Firebase.
-        // Você pode encontrá-las no console do Firebase > Configurações do Projeto > Seus aplicativos.
+        // Substitua com suas credenciais do Firebase para usar no GitHub Pages.
         const firebaseConfig = {
             apiKey: "AIzaSyDdZ4NnOsYCn8Mbt4QkY8SiEjnvbwH_ucY",
             authDomain: "planner-financeiro-85c85.firebaseapp.com",
@@ -84,6 +83,7 @@
 
         const mainContent = document.getElementById('main-content');
         const authContent = document.getElementById('auth-content');
+        const loadingSpinner = document.getElementById('loading-spinner');
         const loginForm = document.getElementById('login-form');
         const registerForm = document.getElementById('register-form');
         const showRegisterBtn = document.getElementById('show-register-btn');
@@ -147,6 +147,7 @@
                 db = getFirestore(app);
                 
                 onAuthStateChanged(auth, (user) => {
+                    loadingSpinner.classList.add('hidden');
                     if (user) {
                         userId = user.uid;
                         userIdDisplay.textContent = `Seu ID de Usuário: ${userId}`;
@@ -161,6 +162,7 @@
                 });
             } catch (error) {
                 console.error("Firebase initialization failed:", error);
+                loadingSpinner.classList.add('hidden');
                 showCustomModal(`Erro de Conexão: ${error.message}`, false);
             }
         };
@@ -250,11 +252,15 @@
         showRegisterBtn.addEventListener('click', () => {
             loginForm.classList.add('hidden');
             registerForm.classList.remove('hidden');
+            document.querySelector('#auth-content .mt-4 p.hidden').classList.remove('hidden');
+            document.querySelector('#auth-content .mt-4 p:not(.hidden)').classList.add('hidden');
         });
 
         showLoginBtn.addEventListener('click', () => {
             registerForm.classList.add('hidden');
             loginForm.classList.remove('hidden');
+            document.querySelector('#auth-content .mt-4 p.hidden').classList.add('hidden');
+            document.querySelector('#auth-content .mt-4 p:not(.hidden)').classList.remove('hidden');
         });
 
         // --- Página 1: Cadastro e Visualização ---
@@ -481,8 +487,20 @@
 </head>
 <body class="bg-gray-100 p-4 min-h-screen flex items-center justify-center">
 
+    <!-- Tela de Carregamento Inicial -->
+    <div id="loading-spinner" class="text-center p-8 bg-white rounded-lg shadow-lg">
+        <h2 class="text-2xl font-bold mb-4">Carregando seu Planner...</h2>
+        <p class="text-gray-600">Aguarde enquanto preparamos seu ambiente financeiro pessoal.</p>
+        <div class="mt-4 flex justify-center items-center">
+            <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </div>
+    </div>
+
     <!-- Auth Content -->
-    <div id="auth-content" class="text-center p-8 bg-white rounded-lg shadow-lg max-w-sm w-full">
+    <div id="auth-content" class="text-center p-8 bg-white rounded-lg shadow-lg max-w-sm w-full hidden">
         <h2 class="text-3xl font-bold text-gray-800 mb-6">Acesso ao Planner Financeiro</h2>
         
         <!-- Login Form -->
