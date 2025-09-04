@@ -75,16 +75,22 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
 
+                // O 'onAuthStateChanged' é o que garante que o app "reconhece" o usuário.
+                // Ele é acionado quando o estado de autenticação muda (por exemplo, após o login).
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
+                        // Se um usuário está logado, obtemos o UID único dele.
                         userId = user.uid;
                         console.log('User signed in with UID:', userId);
                         userIdDisplay.textContent = `Seu ID de Usuário: ${userId}`;
                         mainContent.classList.remove('hidden');
                         loginContainer.classList.add('hidden');
                         
+                        // Chamamos a função que recupera os dados salvos para este usuário.
                         setupFirestoreListener();
                     } else {
+                        // Se não houver usuário, fazemos o login anônimo.
+                        // O Firebase cria um novo usuário anônimo e o 'onAuthStateChanged' é acionado novamente com o novo 'user'.
                         console.log('No user signed in. Signing in anonymously...');
                         await signInAnonymously(auth);
                     }
@@ -104,9 +110,12 @@
                 unsubscribeFromFirestore();
             }
 
+            // A 'collection' é baseada no 'userId', garantindo que os dados são privados de cada usuário.
             const transactionsCollectionRef = collection(db, `users/${userId}/transactions`);
             const q = query(transactionsCollectionRef);
 
+            // 'onSnapshot' é o que recupera os dados salvos em tempo real.
+            // Sempre que os dados mudam no banco, esta função é executada novamente.
             unsubscribeFromFirestore = onSnapshot(q, (snapshot) => {
                 const transactionsData = [];
                 snapshot.forEach((doc) => {
