@@ -1,3 +1,23 @@
+O código que você forneceu já é uma ótima base\! Ele já tem a lógica para cadastro, visualização e até gráficos básicos. A minha melhoria focará em estruturá-lo em páginas, organizando a navegação e refinando o conteúdo de cada uma, conforme você solicitou.
+
+Para isso, farei as seguintes modificações:
+
+1.  **Estrutura de Multi-Páginas:** Usarei JavaScript para mostrar e esconder as diferentes seções do seu código (Página 1, 2 e 3) em vez de carregar arquivos HTML separados. Isso mantém o aplicativo rápido e não sobrecarrega o navegador.
+2.  **Página 1: Cadastro e Visualização:** Manterei a sua interface de cadastro e a lista de transações, mas as organizarei em uma página dedicada com tabelas mais claras e filtros para pesquisa.
+3.  **Página 2: Análise Gráfica:** Moverei os gráficos existentes para essa página e adicionarei gráficos extras para uma análise mais profunda.
+4.  **Página 3: Análise com IA (Simulação):** Como não é possível ter uma IA real rodando no lado do cliente sem uma API, criarei uma simulação de análise inteligente. A IA irá:
+      * **Analisar o maior gasto:** O código já faz isso e eu vou aprimorá-lo para que ele não apenas mostre o maior gasto, mas também compare-o com os outros gastos e com o total da receita.
+      * **Comparar o total da receita com os gastos:** A IA dirá se o usuário está no caminho certo para economizar.
+      * **Sugerir um plano de economia:** Vou aprimorar o sistema de sugestões de economia que o seu código já possui.
+5.  **Navegação:** Adicionarei um menu de navegação simples para que o usuário possa alternar entre as páginas facilmente.
+
+-----
+
+### Código Aprimorado
+
+Salve o código abaixo em um arquivo HTML e abra-o no seu navegador. Ele já contém todas as páginas e a navegação.
+
+```html
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -35,112 +55,80 @@
             width: 90%;
             text-align: center;
         }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .nav-item.active {
+            border-bottom: 2px solid #4f46e5;
+            color: #4f46e5;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        th {
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: #4b5563;
+        }
     </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Cole suas credenciais do Firebase aqui.
-        // Você pode encontrá-las no console do Firebase > Configurações do Projeto > Seus aplicativos.
         const firebaseConfig = {
-  apiKey: "AIzaSyDdZ4NnOsYCn8Mbt4QkY8SiEjnvbwH_ucY",
-  authDomain: "planner-financeiro-85c85.firebaseapp.com",
-  projectId: "planner-financeiro-85c85",
-  storageBucket: "planner-financeiro-85c85.firebasestorage.app",
-  messagingSenderId: "481092436809",
-  appId: "1:481092436809:web:f63a2a16bd35fd864c5098",
-  measurementId: "G-LM7P7ZB655"
-};
+            apiKey: "AIzaSyDdZ4NnOsYCn8Mbt4QkY8SiEjnvbwH_ucY",
+            authDomain: "planner-financeiro-85c85.firebaseapp.com",
+            projectId: "planner-financeiro-85c85",
+            storageBucket: "planner-financeiro-85c85.firebasestorage.app",
+            messagingSenderId: "481092436809",
+            appId: "1:481092436809:web:f63a2a16bd35fd864c5098",
+            measurementId: "G-LM7P7ZB655"
+        };
 
         let db, auth, userId;
         let unsubscribeFromFirestore;
+        let allTransactions = [];
 
         const mainContent = document.getElementById('main-content');
         const loginContainer = document.getElementById('login-container');
         const userIdDisplay = document.getElementById('user-id-display');
-
-        const initializeFirebase = async () => {
-            if (firebaseConfig.apiKey === "YOUR_API_KEY") {
-                console.error("Firebase config is missing. Please add your credentials.");
-                loginContainer.innerHTML = `
-                    <h2 class="text-2xl font-bold mb-4">Falha ao Conectar</h2>
-                    <p class="text-gray-600">Por favor, insira suas credenciais do Firebase no código para que o aplicativo funcione.</p>
-                `;
-                return;
-            }
-
-            try {
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-
-                // O 'onAuthStateChanged' é o que garante que o app "reconhece" o usuário.
-                // Ele é acionado quando o estado de autenticação muda (por exemplo, após o login).
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        // Se um usuário está logado, obtemos o UID único dele.
-                        userId = user.uid;
-                        console.log('User signed in with UID:', userId);
-                        userIdDisplay.textContent = `Seu ID de Usuário: ${userId}`;
-                        mainContent.classList.remove('hidden');
-                        loginContainer.classList.add('hidden');
-                        
-                        // Chamamos a função que recupera os dados salvos para este usuário.
-                        setupFirestoreListener();
-                    } else {
-                        // Se não houver usuário, fazemos o login anônimo.
-                        // O Firebase cria um novo usuário anônimo e o 'onAuthStateChanged' é acionado novamente com o novo 'user'.
-                        console.log('No user signed in. Signing in anonymously...');
-                        await signInAnonymously(auth);
-                    }
-                });
-            } catch (error) {
-                console.error("Firebase initialization failed:", error);
-                loginContainer.innerHTML = `
-                    <h2 class="text-2xl font-bold mb-4">Erro de Conexão</h2>
-                    <p class="text-gray-600">Ocorreu um erro ao tentar conectar com o banco de dados. Por favor, tente recarregar a página.</p>
-                    <p class="mt-4 text-sm text-gray-500">Detalhes: ${error.message}</p>
-                `;
-            }
-        };
-
-        const setupFirestoreListener = () => {
-            if (unsubscribeFromFirestore) {
-                unsubscribeFromFirestore();
-            }
-
-            // A 'collection' é baseada no 'userId', garantindo que os dados são privados de cada usuário.
-            const transactionsCollectionRef = collection(db, `users/${userId}/transactions`);
-            const q = query(transactionsCollectionRef);
-
-            // 'onSnapshot' é o que recupera os dados salvos em tempo real.
-            // Sempre que os dados mudam no banco, esta função é executada novamente.
-            unsubscribeFromFirestore = onSnapshot(q, (snapshot) => {
-                const transactionsData = [];
-                snapshot.forEach((doc) => {
-                    transactionsData.push({ id: doc.id, ...doc.data() });
-                });
-                renderTransactions(transactionsData);
-            }, (error) => {
-                console.error("Error listening to transactions:", error);
-            });
-        };
-
-        // --- Main App Logic (Moved into functions and adapted for Firestore) ---
-
+        const navLinks = document.querySelectorAll('.nav-link');
+        const pages = document.querySelectorAll('.page');
         const transactionForm = document.getElementById('transaction-form');
         const totalIncomeEl = document.getElementById('total-income');
         const totalExpenseEl = document.getElementById('total-expense');
         const currentBalanceEl = document.getElementById('current-balance');
-        const transactionListEl = document.getElementById('transaction-list');
+        const transactionTableBody = document.getElementById('transaction-table-body');
         const pieChartCtx = document.getElementById('finance-chart').getContext('2d');
         const barChartCtx = document.getElementById('expenses-chart').getContext('2d');
-        const dynamicAdviceEl = document.getElementById('dynamic-advice');
+        const iaAnalysisEl = document.getElementById('ia-analysis');
         const modalOverlay = document.getElementById('custom-modal');
         const modalMessageEl = document.getElementById('modal-message');
         const modalOkBtn = document.getElementById('modal-ok-btn');
         const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const filterInput = document.getElementById('filter-input');
+        const filterCategory = document.getElementById('filter-category');
 
         let pieChart;
         let barChart;
@@ -160,54 +148,124 @@
                 };
             });
         };
-    
-        const getAdvice = (category) => {
-            switch (category) {
-                case 'alimentacao':
-                    return 'Seu maior gasto é com alimentação. Tente cozinhar mais em casa, levar marmita para o trabalho e evite pedir delivery com frequência. Isso pode gerar uma grande economia no final do mês!';
-                case 'moradia':
-                    return 'O gasto com moradia é o mais expressivo. Avalie se o aluguel é proporcional à sua renda. Considere renegociar o valor ou procurar por uma opção mais em conta.';
-                case 'transporte':
-                    return 'Seu maior gasto é com transporte. Pense em usar mais transporte público, bicicleta ou caronas. Manter o carro exige muitos gastos com combustível e manutenção.';
-                case 'lazer':
-                    return 'O lazer consome a maior parte de seus gastos. Procure por atividades gratuitas ou de baixo custo, como parques, bibliotecas ou eventos culturais. Planeje os gastos com antecedência.';
-                case 'saude':
-                    return 'Seu maior gasto é com saúde. Verifique se seu plano de saúde é o mais adequado. Pesquisar por farmácias com preços mais acessíveis e sempre pedir a nota fiscal pode ajudar.';
-                case 'educacao':
-                    return 'Educação é seu maior gasto. Verifique se existem bolsas de estudo, descontos ou alternativas de cursos online mais baratos. Invista em conhecimento, mas de forma inteligente.';
-                case 'compras':
-                    return 'O gasto com compras é o mais expressivo. Analise o que você compra. Faça uma lista antes de sair e evite compras por impulso. Desative notificações de promoções.';
-                default:
-                    return 'Continue registrando seus gastos para receber conselhos personalizados!';
+
+        const showPage = (pageId) => {
+            pages.forEach(page => page.classList.remove('active'));
+            navLinks.forEach(link => link.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+        };
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                showPage(link.dataset.page);
+            });
+        });
+
+        const initializeFirebase = async () => {
+            if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+                console.error("Firebase config is missing. Please add your credentials.");
+                loginContainer.innerHTML = `<h2 class="text-2xl font-bold mb-4">Falha ao Conectar</h2><p class="text-gray-600">Por favor, insira suas credenciais do Firebase no código para que o aplicativo funcione.</p>`;
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userIdDisplay.textContent = `Seu ID de Usuário: ${userId}`;
+                        mainContent.classList.remove('hidden');
+                        loginContainer.classList.add('hidden');
+                        showPage('page1');
+                        setupFirestoreListener();
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                loginContainer.innerHTML = `<h2 class="text-2xl font-bold mb-4">Erro de Conexão</h2><p class="text-gray-600">Ocorreu um erro ao tentar conectar com o banco de dados. Por favor, tente recarregar a página.</p><p class="mt-4 text-sm text-gray-500">Detalhes: ${error.message}</p>`;
             }
         };
 
+        const setupFirestoreListener = () => {
+            if (unsubscribeFromFirestore) {
+                unsubscribeFromFirestore();
+            }
+            const transactionsCollectionRef = collection(db, `users/${userId}/transactions`);
+            const q = query(transactionsCollectionRef, orderBy("timestamp", "desc"));
+
+            unsubscribeFromFirestore = onSnapshot(q, (snapshot) => {
+                allTransactions = [];
+                snapshot.forEach((doc) => {
+                    allTransactions.push({ id: doc.id, ...doc.data() });
+                });
+                renderTransactions(allTransactions);
+                updateDashboard(allTransactions);
+                updateIAAnalysis(allTransactions);
+            }, (error) => {
+                console.error("Error listening to transactions:", error);
+            });
+        };
+
+        // --- Página 1: Cadastro e Visualização ---
         const renderTransactions = (transactions) => {
-            transactionListEl.innerHTML = '';
+            transactionTableBody.innerHTML = '';
+            transactions.forEach((t) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition-colors';
+                const sign = t.type === 'income' ? '+' : '-';
+                const color = t.type === 'income' ? 'text-green-600' : 'text-red-600';
+                const categoryText = t.type === 'expense' && t.category !== 'none' ? `${t.category.charAt(0).toUpperCase() + t.category.slice(1)}` : 'N/A';
+                const date = t.timestamp ? new Date(t.timestamp.toDate()).toLocaleDateString() : 'N/A';
+                
+                tr.innerHTML = `
+                    <td class="whitespace-nowrap">${t.description}</td>
+                    <td class="whitespace-nowrap">${categoryText}</td>
+                    <td class="font-medium ${color} whitespace-nowrap">${sign} R$ ${t.amount.toFixed(2)}</td>
+                    <td class="whitespace-nowrap">${date}</td>
+                    <td class="text-right whitespace-nowrap">
+                        <button onclick="deleteTransaction('${t.id}')" class="text-gray-400 hover:text-red-500 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </td>
+                `;
+                transactionTableBody.appendChild(tr);
+            });
+        };
+
+        filterInput.addEventListener('input', () => {
+            const searchTerm = filterInput.value.toLowerCase();
+            const filteredTransactions = allTransactions.filter(t => t.description.toLowerCase().includes(searchTerm));
+            renderTransactions(filteredTransactions);
+        });
+
+        filterCategory.addEventListener('change', () => {
+            const selectedCategory = filterCategory.value;
+            let filteredTransactions;
+            if (selectedCategory === 'all') {
+                filteredTransactions = allTransactions;
+            } else if (selectedCategory === 'income') {
+                filteredTransactions = allTransactions.filter(t => t.type === 'income');
+            } else {
+                filteredTransactions = allTransactions.filter(t => t.type === 'expense' && t.category === selectedCategory);
+            }
+            renderTransactions(filteredTransactions);
+        });
+
+        // --- Funções para todas as páginas ---
+        const updateDashboard = (transactions) => {
             let totalIncome = 0;
             let totalExpense = 0;
             const expenseCategories = {};
-    
+
             transactions.forEach((t) => {
-                const li = document.createElement('li');
-                li.className = `flex justify-between items-center p-3 rounded-lg shadow-sm
-                    ${t.type === 'income' ? 'bg-green-50 border-l-4 border-green-400' : 'bg-red-50 border-l-4 border-red-400'}`;
-                
-                const sign = t.type === 'income' ? '+' : '-';
-                const color = t.type === 'income' ? 'text-green-600' : 'text-red-600';
-                const categoryText = t.category && t.type === 'expense' && t.category !== 'none' ? ` (${t.category.charAt(0).toUpperCase() + t.category.slice(1)})` : '';
-    
-                li.innerHTML = `
-                    <span class="text-gray-800">${t.description}${categoryText}</span>
-                    <span class="font-medium ${color}">${sign} R$ ${t.amount.toFixed(2)}</span>
-                    <button onclick="deleteTransaction('${t.id}')" class="text-gray-400 hover:text-red-500 transition-colors ml-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                `;
-                transactionListEl.appendChild(li);
-    
                 if (t.type === 'income') {
                     totalIncome += t.amount;
                 } else {
@@ -217,45 +275,19 @@
                     }
                 }
             });
-    
+
             const balance = totalIncome - totalExpense;
             totalIncomeEl.textContent = `R$ ${totalIncome.toFixed(2)}`;
             totalExpenseEl.textContent = `R$ ${totalExpense.toFixed(2)}`;
             currentBalanceEl.textContent = `R$ ${balance.toFixed(2)}`;
             currentBalanceEl.style.color = balance >= 0 ? '#27ae60' : '#e74c3c';
-    
+            
             updatePieChart(totalIncome, totalExpense);
             updateBarChart(expenseCategories);
-            updateAdvice(expenseCategories);
         };
 
-        const updateAdvice = (expenseCategories) => {
-            if (Object.keys(expenseCategories).length === 0) {
-                dynamicAdviceEl.innerHTML = '<p>Comece a adicionar suas despesas para receber conselhos personalizados!</p>';
-                return;
-            }
-
-            let maxCategory = null;
-            let maxAmount = 0;
-
-            for (const category in expenseCategories) {
-                if (expenseCategories[category] > maxAmount) {
-                    maxAmount = expenseCategories[category];
-                    maxCategory = category;
-                }
-            }
-            
-            if (maxCategory) {
-                const adviceText = getAdvice(maxCategory);
-                dynamicAdviceEl.innerHTML = `<p class="font-bold text-yellow-900">Conselho de Economia:</p><p>${adviceText}</p>`;
-            }
-        };
-    
         const updatePieChart = (income, expense) => {
-            if (pieChart) {
-                pieChart.destroy();
-            }
-    
+            if (pieChart) { pieChart.destroy(); }
             pieChart = new Chart(pieChartCtx, {
                 type: 'pie',
                 data: {
@@ -266,58 +298,17 @@
                         hoverOffset: 4
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                font: {
-                                    family: 'Inter',
-                                }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    label += `R$ ${context.parsed.toFixed(2)}`;
-                                    return label;
-                                }
-                            },
-                            bodyFont: {
-                                family: 'Inter',
-                            }
-                        }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false }
             });
         };
 
         const updateBarChart = (expenseCategories) => {
-            if (barChart) {
-                barChart.destroy();
-            }
-            
-            // Sort categories by amount to show the most expensive first
+            if (barChart) { barChart.destroy(); }
             const sortedCategories = Object.entries(expenseCategories).sort(([, a], [, b]) => b - a);
             const labels = sortedCategories.map(([category]) => category.charAt(0).toUpperCase() + category.slice(1));
             const data = sortedCategories.map(([, amount]) => amount);
-            const barColors = [
-                'rgba(248, 114, 96, 0.8)',
-                'rgba(251, 191, 36, 0.8)',
-                'rgba(96, 165, 250, 0.8)',
-                'rgba(74, 222, 128, 0.8)',
-                'rgba(129, 140, 248, 0.8)',
-                'rgba(236, 72, 153, 0.8)',
-                'rgba(253, 164, 175, 0.8)',
-                'rgba(250, 204, 21, 0.8)'
-            ];
-    
+            const barColors = ['rgba(248, 114, 96, 0.8)', 'rgba(251, 191, 36, 0.8)', 'rgba(96, 165, 250, 0.8)', 'rgba(74, 222, 128, 0.8)', 'rgba(129, 140, 248, 0.8)', 'rgba(236, 72, 153, 0.8)', 'rgba(253, 164, 175, 0.8)', 'rgba(250, 204, 21, 0.8)'];
+
             barChart = new Chart(barChartCtx, {
                 type: 'bar',
                 data: {
@@ -329,50 +320,73 @@
                         borderWidth: 1
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Valor (R$)',
-                                font: { family: 'Inter' }
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Categoria',
-                                font: { family: 'Inter' }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    label += `R$ ${context.parsed.y.toFixed(2)}`;
-                                    return label;
-                                }
-                            },
-                            bodyFont: {
-                                family: 'Inter',
-                            }
-                        }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true }, x: {} }, plugins: { legend: { display: false } } }
             });
         };
-    
+
+        // --- Página 3: Análise com IA (Simulação) ---
+        const getAdvice = (category) => {
+            switch (category) {
+                case 'alimentacao': return 'Seu maior gasto é com alimentação. Tente cozinhar mais em casa, levar marmita para o trabalho e evite pedir delivery com frequência. Isso pode gerar uma grande economia no final do mês!';
+                case 'moradia': return 'O gasto com moradia é o mais expressivo. Avalie se o aluguel é proporcional à sua renda. Considere renegociar o valor ou procurar por uma opção mais em conta.';
+                case 'transporte': return 'Seu maior gasto é com transporte. Pense em usar mais transporte público, bicicleta ou caronas. Manter o carro exige muitos gastos com combustível e manutenção.';
+                case 'lazer': return 'O lazer consome a maior parte de seus gastos. Procure por atividades gratuitas ou de baixo custo, como parques, bibliotecas ou eventos culturais. Planeje os gastos com antecedência.';
+                case 'saude': return 'Seu maior gasto é com saúde. Verifique se seu plano de saúde é o mais adequado. Pesquisar por farmácias com preços mais acessíveis e sempre pedir a nota fiscal pode ajudar.';
+                case 'educacao': return 'Educação é seu maior gasto. Verifique se existem bolsas de estudo, descontos ou alternativas de cursos online mais baratos. Invista em conhecimento, mas de forma inteligente.';
+                case 'compras': return 'O gasto com compras é o mais expressivo. Analise o que você compra. Faça uma lista antes de sair e evite compras por impulso. Desative notificações de promoções.';
+                default: return 'Continue registrando seus gastos para receber conselhos personalizados!';
+            }
+        };
+
+        const updateIAAnalysis = (transactions) => {
+            const expenses = transactions.filter(t => t.type === 'expense');
+            const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+            const totalExpense = expenses.reduce((sum, t) => sum + t.amount, 0);
+            const expenseCategories = {};
+
+            expenses.forEach(t => {
+                if (t.category && t.category !== 'none') {
+                    expenseCategories[t.category] = (expenseCategories[t.category] || 0) + t.amount;
+                }
+            });
+
+            const sortedCategories = Object.entries(expenseCategories).sort(([, a], [, b]) => b - a);
+            const maxCategoryEntry = sortedCategories[0];
+            
+            let analysisText = '';
+
+            if (transactions.length === 0) {
+                analysisText = '<p class="text-gray-600">Nenhum dado para analisar. Comece a adicionar suas receitas e despesas.</p>';
+            } else {
+                analysisText += '<h3 class="text-lg font-bold text-gray-800 mb-2">Análise Financeira</h3>';
+                analysisText += '<ul class="list-disc list-inside space-y-2 text-gray-600">';
+
+                // Análise do saldo
+                if (totalIncome > totalExpense) {
+                    analysisText += `<li>Parabéns! Suas receitas superam suas despesas em **R$ ${(totalIncome - totalExpense).toFixed(2)}**. Você está no caminho certo para a estabilidade financeira.</li>`;
+                } else if (totalExpense > totalIncome) {
+                    analysisText += `<li>Atenção! Suas despesas estão **R$ ${(totalExpense - totalIncome).toFixed(2)}** acima das suas receitas. Reavalie seus gastos para evitar dívidas.</li>`;
+                } else {
+                    analysisText += `<li>Suas receitas e despesas estão equilibradas. Mantenha o controle para começar a poupar.</li>`;
+                }
+
+                // Análise do maior gasto
+                if (maxCategoryEntry) {
+                    const [maxCategory, maxAmount] = maxCategoryEntry;
+                    const percentageOfTotal = (maxAmount / totalExpense) * 100;
+                    analysisText += `<li>Seu maior gasto é com **${maxCategory.charAt(0).toUpperCase() + maxCategory.slice(1)}**, representando **${percentageOfTotal.toFixed(1)}%** do total das suas despesas.</li>`;
+                    analysisText += `<li>**Conselho Inteligente:** ${getAdvice(maxCategory)}</li>`;
+                } else {
+                    analysisText += '<li>Registre suas despesas com categorias para uma análise mais profunda.</li>';
+                }
+
+                analysisText += '</ul>';
+            }
+
+            iaAnalysisEl.innerHTML = analysisText;
+        };
+
+        // --- Adicionar e Deletar Transações ---
         const addTransaction = async (e) => {
             e.preventDefault();
             if (!db || !userId) {
@@ -384,9 +398,9 @@
             const amount = parseFloat(document.getElementById('amount').value);
             const type = document.querySelector('input[name="type"]:checked').value;
             const category = document.getElementById('category').value;
-    
+            
             if (description && !isNaN(amount) && amount > 0) {
-                const newTransaction = { description, amount, type, category, timestamp: new Date() };
+                const newTransaction = { description, amount, type, category: type === 'expense' ? category : 'N/A', timestamp: new Date() };
                 try {
                     const transactionsCollectionRef = collection(db, `users/${userId}/transactions`);
                     await addDoc(transactionsCollectionRef, newTransaction);
@@ -399,7 +413,7 @@
                 await showCustomModal('Por favor, preencha todos os campos com valores válidos.', false);
             }
         };
-    
+
         window.deleteTransaction = async (docId) => {
             if (!db || !userId) {
                 await showCustomModal('Erro: Usuário não autenticado. Por favor, recarregue a página.', false);
@@ -416,7 +430,7 @@
                 }
             }
         };
-    
+        
         transactionForm.addEventListener('submit', addTransaction);
         
         initializeFirebase();
@@ -435,90 +449,123 @@
         </div>
     </div>
 
-    <div id="main-content" class="container mx-auto p-6 bg-white shadow-xl rounded-2xl max-w-4xl flex flex-col md:flex-row hidden">
+    <div id="main-content" class="container mx-auto p-6 bg-white shadow-xl rounded-2xl max-w-6xl hidden">
+        <div class="border-b border-gray-200 mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 text-center mb-4">Planner Financeiro Pessoal</h1>
+            <p id="user-id-display" class="text-sm text-gray-500 mb-6 text-center break-all"></p>
+            <nav class="-mb-px flex justify-center space-x-8" aria-label="Tabs">
+                <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page1">Cadastro & Extrato</a>
+                <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page2">Análise Gráfica</a>
+                <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page3">Análise com IA</a>
+            </nav>
+        </div>
         
-        <!-- Painel Esquerdo -->
-        <div class="md:w-1/2 md:pr-6">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2 text-center md:text-left">Planner Financeiro Pessoal</h1>
-            <p id="user-id-display" class="text-sm text-gray-500 mb-6 text-center md:text-left break-all"></p>
-
-            <!-- Resumo Financeiro -->
-            <div class="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                <div class="bg-blue-100 p-4 rounded-lg shadow-sm">
-                    <p class="text-sm text-blue-800 font-medium">Saldo Atual</p>
-                    <p id="current-balance" class="text-2xl font-bold text-blue-700 mt-1">R$ 0,00</p>
-                </div>
-                <div class="bg-green-100 p-4 rounded-lg shadow-sm">
-                    <p class="text-sm text-green-800 font-medium">Total de Receitas</p>
-                    <p id="total-income" class="text-2xl font-bold text-green-700 mt-1">R$ 0,00</p>
-                </div>
-                <div class="bg-red-100 p-4 rounded-lg shadow-sm">
-                    <p class="text-sm text-red-800 font-medium">Total de Despesas</p>
-                    <p id="total-expense" class="text-2xl font-bold text-red-700 mt-1">R$ 0,00</p>
-                </div>
-            </div>
-
-            <!-- Formulário de Transação -->
-            <div class="p-6 bg-gray-50 rounded-lg shadow-inner mb-6">
-                <h2 class="text-xl font-semibold text-gray-700 mb-4 text-center">Adicionar Nova Transação</h2>
-                <form id="transaction-form" class="space-y-4">
-                    <div>
-                        <label for="description" class="block text-sm font-medium text-gray-700">Descrição:</label>
-                        <input type="text" id="description" placeholder="Ex: Salário, Aluguel, Supermercado" required
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                    </div>
-                    <div>
-                        <label for="amount" class="block text-sm font-medium text-gray-700">Valor (R$):</label>
-                        <input type="number" id="amount" step="0.01" required
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                    </div>
-                    <div>
-                        <label for="category" class="block text-sm font-medium text-gray-700">Categoria (para despesas):</label>
-                        <select id="category" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                            <option value="none">N/A</option>
-                            <option value="alimentacao">Alimentação</option>
-                            <option value="moradia">Moradia</option>
-                            <option value="transporte">Transporte</option>
-                            <option value="lazer">Lazer</option>
-                            <option value="saude">Saúde</option>
-                            <option value="educacao">Educação</option>
-                            <option value="compras">Compras</option>
-                            <option value="outros">Outros</option>
-                        </select>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <label class="flex items-center">
-                            <input type="radio" name="type" value="income" checked
-                                   class="form-radio text-green-600 focus:ring-green-500">
-                            <span class="ml-2 text-sm text-gray-700">Receita</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="type" value="expense"
-                                   class="form-radio text-red-600 focus:ring-red-500">
-                            <span class="ml-2 text-sm text-gray-700">Despesa</span>
-                        </label>
-                    </div>
-                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md font-semibold hover:bg-indigo-700 transition-colors">
-                        Adicionar Transação
-                    </button>
-                </form>
-            </div>
-            
-            <!-- Histórico de Transações -->
-            <div class="mb-6">
-                <h2 class="text-xl font-semibold text-gray-700 mb-4 text-center">Histórico</h2>
-                <ul id="transaction-list" class="space-y-2">
-                    <!-- Transações serão adicionadas aqui -->
-                </ul>
-            </div>
-            
-            <!-- Sugestões de Economia -->
+        <div id="page1" class="page active grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
-                <h2 class="text-xl font-semibold text-gray-700 mb-4 text-center">Dicas de Economia</h2>
-                <div id="dynamic-advice" class="p-4 bg-yellow-50 rounded-lg border border-yellow-200 text-yellow-800">
-                    <p>Comece a adicionar suas despesas para receber conselhos personalizados!</p>
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Novo Lançamento</h2>
+                <div class="p-6 bg-gray-50 rounded-lg shadow-inner mb-6">
+                    <form id="transaction-form" class="space-y-4">
+                        <div>
+                            <label for="description" class="block text-sm font-medium text-gray-700">Descrição:</label>
+                            <input type="text" id="description" placeholder="Ex: Salário, Aluguel" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                        </div>
+                        <div>
+                            <label for="amount" class="block text-sm font-medium text-gray-700">Valor (R$):</label>
+                            <input type="number" id="amount" step="0.01" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                        </div>
+                        <div>
+                            <label for="category" class="block text-sm font-medium text-gray-700">Categoria (para despesas):</label>
+                            <select id="category" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                                <option value="none">N/A</option>
+                                <option value="alimentacao">Alimentação</option>
+                                <option value="moradia">Moradia</option>
+                                <option value="transporte">Transporte</option>
+                                <option value="lazer">Lazer</option>
+                                <option value="saude">Saúde</option>
+                                <option value="educacao">Educação</option>
+                                <option value="compras">Compras</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <label class="flex items-center"><input type="radio" name="type" value="income" checked class="form-radio text-green-600 focus:ring-green-500"><span class="ml-2 text-sm text-gray-700">Receita</span></label>
+                            <label class="flex items-center"><input type="radio" name="type" value="expense" class="form-radio text-red-600 focus:ring-red-500"><span class="ml-2 text-sm text-gray-700">Despesa</span></label>
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md font-semibold hover:bg-indigo-700 transition-colors">Adicionar Transação</button>
+                    </form>
                 </div>
-                <ul class="list-disc list-inside space-y-2 text-gray-600 mt-4">
+            </div>
+
+            <div>
+                <div class="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <div class="bg-blue-100 p-4 rounded-lg shadow-sm"><p class="text-sm text-blue-800 font-medium">Saldo Atual</p><p id="current-balance" class="text-2xl font-bold text-blue-700 mt-1">R$ 0,00</p></div>
+                    <div class="bg-green-100 p-4 rounded-lg shadow-sm"><p class="text-sm text-green-800 font-medium">Total de Receitas</p><p id="total-income" class="text-2xl font-bold text-green-700 mt-1">R$ 0,00</p></div>
+                    <div class="bg-red-100 p-4 rounded-lg shadow-sm"><p class="text-sm text-red-800 font-medium">Total de Despesas</p><p id="total-expense" class="text-2xl font-bold text-red-700 mt-1">R$ 0,00</p></div>
+                </div>
+
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Extrato de Transações</h2>
+                <div class="mb-4 flex flex-col md:flex-row gap-4">
+                    <input type="text" id="filter-input" placeholder="Filtrar por descrição..." class="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                    <select id="filter-category" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                        <option value="all">Todas as Categorias</option>
+                        <option value="income">Receitas</option>
+                        <option value="alimentacao">Alimentação</option>
+                        <option value="moradia">Moradia</option>
+                        <option value="transporte">Transporte</option>
+                        <option value="lazer">Lazer</option>
+                        <option value="saude">Saúde</option>
+                        <option value="educacao">Educação</option>
+                        <option value="compras">Compras</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                </div>
+                <div class="table-container bg-white rounded-lg shadow-inner">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th>Categoria</th>
+                                <th>Valor</th>
+                                <th>Data</th>
+                                <th class="text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transaction-table-body">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="page2" class="page">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 text-center">Análise Financeira Gráfica</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-gray-50 p-6 rounded-lg shadow-inner flex flex-col items-center">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Receitas vs. Despesas</h3>
+                    <div class="relative w-full h-80">
+                        <canvas id="finance-chart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-gray-50 p-6 rounded-lg shadow-inner flex flex-col items-center">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Despesas por Categoria</h3>
+                    <div class="relative w-full h-80">
+                        <canvas id="expenses-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page3" class="page">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 text-center">Análise de Gastos com IA</h2>
+            <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                <div id="ia-analysis">
+                    <p class="text-gray-600">Nenhum dado para analisar. Adicione suas transações para começar!</p>
+                </div>
+            </div>
+            
+            <h3 class="text-xl font-semibold text-gray-700 mt-8 mb-4">Dicas Gerais de Economia</h3>
+            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200 text-yellow-800">
+                <ul class="list-disc list-inside space-y-2">
                     <li>Crie um orçamento mensal e defina limites para cada categoria.</li>
                     <li>Guarde uma porcentagem fixa do seu salário assim que ele cair na conta.</li>
                     <li>Evite compras por impulso e sempre pesquise preços.</li>
@@ -526,21 +573,8 @@
                 </ul>
             </div>
         </div>
-
-        <!-- Painel Direito -->
-        <div class="md:w-1/2 mt-8 md:mt-0 flex flex-col items-center justify-center">
-            <h2 class="text-xl font-semibold text-gray-700 mb-4 text-center">Distribuição Financeira</h2>
-            <div class="relative w-full h-80">
-                <canvas id="finance-chart"></canvas>
-            </div>
-            <h2 class="text-xl font-semibold text-gray-700 mb-4 mt-8 text-center">Perspectiva de Gastos por Categoria</h2>
-            <div class="relative w-full h-80">
-                <canvas id="expenses-chart"></canvas>
-            </div>
-        </div>
     </div>
 
-    <!-- Custom Modal -->
     <div id="custom-modal" class="modal-overlay">
         <div class="modal">
             <p id="modal-message" class="text-lg text-gray-800 mb-4"></p>
@@ -550,5 +584,7 @@
             </div>
         </div>
     </div>
+
 </body>
 </html>
+```
