@@ -38,13 +38,20 @@
     </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global variables provided by the Canvas environment.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // Cole suas credenciais do Firebase aqui.
+        // Você pode encontrá-las no console do Firebase > Configurações do Projeto > Seus aplicativos.
+        const firebaseConfig = {
+  apiKey: "AIzaSyDdZ4NnOsYCn8Mbt4QkY8SiEjnvbwH_ucY",
+  authDomain: "planner-financeiro-85c85.firebaseapp.com",
+  projectId: "planner-financeiro-85c85",
+  storageBucket: "planner-financeiro-85c85.firebasestorage.app",
+  messagingSenderId: "481092436809",
+  appId: "1:481092436809:web:f63a2a16bd35fd864c5098",
+  measurementId: "G-LM7P7ZB655"
+};
 
         let db, auth, userId;
         let unsubscribeFromFirestore;
@@ -54,13 +61,11 @@
         const userIdDisplay = document.getElementById('user-id-display');
 
         const initializeFirebase = async () => {
-            // Check if Firebase configuration is available
-            if (Object.keys(firebaseConfig).length === 0) {
-                console.error("Firebase config is missing. The app cannot run locally. Please use the Canvas environment.");
+            if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+                console.error("Firebase config is missing. Please add your credentials.");
                 loginContainer.innerHTML = `
                     <h2 class="text-2xl font-bold mb-4">Falha ao Conectar</h2>
-                    <p class="text-gray-600">Este aplicativo usa o Firebase para salvar dados do usuário, mas as configurações não foram encontradas.</p>
-                    <p class="mt-4 text-sm text-gray-500">Por favor, execute o aplicativo no ambiente do Canvas para ter a experiência completa.</p>
+                    <p class="text-gray-600">Por favor, insira suas credenciais do Firebase no código para que o aplicativo funcione.</p>
                 `;
                 return;
             }
@@ -81,11 +86,7 @@
                         setupFirestoreListener();
                     } else {
                         console.log('No user signed in. Signing in anonymously...');
-                        if (initialAuthToken) {
-                            await signInWithCustomToken(auth, initialAuthToken);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
+                        await signInAnonymously(auth);
                     }
                 });
             } catch (error) {
@@ -103,7 +104,7 @@
                 unsubscribeFromFirestore();
             }
 
-            const transactionsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/transactions`);
+            const transactionsCollectionRef = collection(db, `users/${userId}/transactions`);
             const q = query(transactionsCollectionRef);
 
             unsubscribeFromFirestore = onSnapshot(q, (snapshot) => {
@@ -378,7 +379,7 @@
             if (description && !isNaN(amount) && amount > 0) {
                 const newTransaction = { description, amount, type, category, timestamp: new Date() };
                 try {
-                    const transactionsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/transactions`);
+                    const transactionsCollectionRef = collection(db, `users/${userId}/transactions`);
                     await addDoc(transactionsCollectionRef, newTransaction);
                     document.getElementById('transaction-form').reset();
                 } catch (e) {
@@ -398,7 +399,7 @@
             const confirmed = await showCustomModal('Tem certeza que deseja excluir esta transação?', true);
             if (confirmed) {
                 try {
-                    const docRef = doc(db, `artifacts/${appId}/users/${userId}/transactions`, docId);
+                    const docRef = doc(db, `users/${userId}/transactions`, docId);
                     await deleteDoc(docRef);
                 } catch (e) {
                     console.error("Error deleting document: ", e);
