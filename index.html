@@ -1,450 +1,341 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organizador Financeiro</title>
+    <title>Gerenciador Financeiro Pessoal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-            color: #1f2937;
-        }
-        .container {
-            max-width: 800px;
-        }
-        .section-card {
-            background-color: #ffffff;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-        .input-group {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-        .input-group input, .input-group select {
-            flex-grow: 1;
-        }
-        .error-message {
-            color: #ef4444;
-            margin-top: 0.5rem;
-            font-size: 0.875rem;
-        }
-    </style>
-</head>
-<body class="p-4 sm:p-8">
-    <div class="container mx-auto">
-        <header class="text-center mb-10">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">Organizador Financeiro</h1>
-            <p class="text-lg text-gray-500 mt-2">Controle suas finanças e alcance seus objetivos.</p>
-        </header>
-
-        <main class="space-y-8">
-            <!-- Loading Indicator -->
-            <div id="loading" class="flex justify-center items-center py-10">
-                <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gray-900"></div>
-            </div>
-
-            <div id="app" class="space-y-8 hidden">
-                <!-- User ID Display -->
-                <div class="section-card">
-                    <h2 class="text-2xl font-bold mb-4">Seu ID de Usuário</h2>
-                    <p class="text-gray-600">Este ID é sua chave para acessar seus dados salvos. Salve-o em um local seguro.</p>
-                    <div class="mt-4 p-3 bg-gray-100 rounded-lg flex justify-between items-center">
-                        <span id="userIdDisplay" class="font-mono text-sm sm:text-base break-all"></span>
-                        <button id="copyButton" class="bg-blue-500 text-white p-2 rounded-lg text-sm hover:bg-blue-600 transition-colors">Copiar</button>
-                    </div>
-                    <div id="messageBox" class="mt-4 p-3 hidden text-sm bg-green-100 text-green-700 rounded-md"></div>
-                </div>
-
-                <!-- Resumo Financeiro -->
-                <div class="section-card">
-                    <h2 class="text-2xl font-bold mb-4">Resumo Financeiro</h2>
-                    <div class="flex flex-col sm:flex-row justify-between gap-4 text-center">
-                        <div class="flex-1 p-4 bg-green-50 rounded-lg">
-                            <h3 class="text-lg text-gray-600">Receitas</h3>
-                            <p id="totalRevenue" class="text-2xl font-semibold text-green-600 mt-1">R$ 0,00</p>
-                        </div>
-                        <div class="flex-1 p-4 bg-red-50 rounded-lg">
-                            <h3 class="text-lg text-gray-600">Despesas</h3>
-                            <p id="totalExpenses" class="text-2xl font-semibold text-red-600 mt-1">R$ 0,00</p>
-                        </div>
-                        <div class="flex-1 p-4 bg-blue-50 rounded-lg">
-                            <h3 class="text-lg text-gray-600">Saldo Final</h3>
-                            <p id="finalBalance" class="text-2xl font-semibold text-blue-600 mt-1">R$ 0,00</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Adicionar Transação -->
-                <div class="section-card">
-                    <h2 class="text-2xl font-bold mb-4">Adicionar Transação</h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label for="transactionType" class="block text-gray-700">Tipo</label>
-                            <select id="transactionType" class="w-full p-2 border border-gray-300 rounded-lg mt-1">
-                                <option value="income">Receita</option>
-                                <option value="expense">Despesa</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="transactionAmount" class="block text-gray-700">Valor</label>
-                            <input type="number" id="transactionAmount" class="w-full p-2 border border-gray-300 rounded-lg mt-1" placeholder="Ex: 50.00">
-                        </div>
-                        <div>
-                            <label for="transactionDescription" class="block text-gray-700">Descrição</label>
-                            <input type="text" id="transactionDescription" class="w-full p-2 border border-gray-300 rounded-lg mt-1" placeholder="Ex: Salário, Aluguel">
-                        </div>
-                        <div>
-                            <label for="transactionCategory" class="block text-gray-700">Categoria</label>
-                            <select id="transactionCategory" class="w-full p-2 border border-gray-300 rounded-lg mt-1">
-                                <option value="Salario">Salário</option>
-                                <option value="Renda Extra">Renda Extra</option>
-                                <option value="Moradia">Moradia</option>
-                                <option value="Alimentacao">Alimentação</option>
-                                <option value="Transporte">Transporte</option>
-                                <option value="Lazer">Lazer</option>
-                                <option value="Saude">Saúde</option>
-                                <option value="Educacao">Educação</option>
-                                <option value="Outros">Outros</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button id="addTransactionBtn" class="w-full bg-indigo-600 text-white p-3 rounded-lg mt-6 font-semibold hover:bg-indigo-700 transition-colors">Adicionar</button>
-                    <div id="addTransactionMessage" class="mt-4 p-3 hidden text-sm bg-red-100 text-red-700 rounded-md"></div>
-                </div>
-
-                <!-- Análise Financeira -->
-                <div class="section-card">
-                    <h2 class="text-2xl font-bold mb-4">Análise Financeira ✨</h2>
-                    <p class="text-gray-600 mb-4">Obtenha uma análise inteligente das suas finanças e dicas para poupar.</p>
-                    <button id="getAdviceBtn" class="w-full bg-yellow-500 text-white p-3 rounded-lg font-semibold hover:bg-yellow-600 transition-colors">
-                        Obter Análise
-                    </button>
-                    <div id="adviceLoading" class="hidden flex justify-center items-center py-6">
-                        <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-yellow-500"></div>
-                    </div>
-                    <div id="adviceResult" class="mt-4 p-4 bg-gray-100 rounded-lg hidden"></div>
-                </div>
-
-                <!-- Histórico de Transações -->
-                <div class="section-card">
-                    <h2 class="text-2xl font-bold mb-4">Histórico de Transações</h2>
-                    <div id="transactionsList" class="space-y-4">
-                        <p id="noTransactionsMsg" class="text-gray-500">Nenhuma transação adicionada ainda.</p>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Firebase Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Global variables provided by the environment
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, orderBy, getDocsFromCache, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Use os dados do ambiente fornecidos pelo Canvas
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // --- Firebase Initialization ---
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        let userId;
+        let db, auth;
+        let userId = null;
+        let isAuthReady = false;
 
-        const loading = document.getElementById('loading');
-        const appContainer = document.getElementById('app');
-        const userIdDisplay = document.getElementById('userIdDisplay');
-        const copyButton = document.getElementById('copyButton');
-        const messageBox = document.getElementById('messageBox');
-        const addTransactionBtn = document.getElementById('addTransactionBtn');
-        const addTransactionMessage = document.getElementById('addTransactionMessage');
-        const getAdviceBtn = document.getElementById('getAdviceBtn');
-        const adviceLoading = document.getElementById('adviceLoading');
-        const adviceResult = document.getElementById('adviceResult');
+        setLogLevel('debug'); // Ativa o modo de depuração do Firestore
 
-        const transactionTypeEl = document.getElementById('transactionType');
-        const transactionAmountEl = document.getElementById('transactionAmount');
-        const transactionDescriptionEl = document.getElementById('transactionDescription');
-        const transactionCategoryEl = document.getElementById('transactionCategory');
+        window.onload = () => {
+            document.getElementById('loading-indicator').classList.add('hidden');
+        };
 
-        const totalRevenueEl = document.getElementById('totalRevenue');
-        const totalExpensesEl = document.getElementById('totalExpenses');
-        const finalBalanceEl = document.getElementById('finalBalance');
-        const transactionsListEl = document.getElementById('transactionsList');
-        const noTransactionsMsg = document.getElementById('noTransactionsMsg');
-
-        // Sign in anonymously to get a user ID
-        const signIn = async () => {
+        async function initFirebase() {
             try {
+                if (Object.keys(firebaseConfig).length === 0) {
+                    console.error("Firebase config is missing. Cannot initialize Firebase.");
+                    document.getElementById('status-message').textContent = 'Erro: Configuração do Firebase ausente.';
+                    return;
+                }
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
                     await signInAnonymously(auth);
                 }
-                userId = auth.currentUser.uid;
-                userIdDisplay.textContent = userId;
-                loading.classList.add('hidden');
-                appContainer.classList.remove('hidden');
-                setupRealtimeListener();
-            } catch (error) {
-                console.error("Erro ao fazer login anônimo:", error);
-                loading.classList.add('hidden');
-                showMessage("Erro ao carregar o aplicativo. Tente novamente mais tarde.", 'red');
-            }
-        };
 
-        const showMessage = (message, type) => {
-            messageBox.textContent = message;
-            messageBox.className = `mt-4 p-3 text-sm rounded-md`;
-            if (type === 'green') {
-                messageBox.classList.add('bg-green-100', 'text-green-700');
-            } else if (type === 'red') {
-                messageBox.classList.add('bg-red-100', 'text-red-700');
-            }
-            messageBox.classList.remove('hidden');
-            setTimeout(() => {
-                messageBox.classList.add('hidden');
-            }, 5000);
-        };
-
-        // --- Realtime Data Listener ---
-        const setupRealtimeListener = () => {
-            const userTransactionsColRef = collection(db, `artifacts/${appId}/users/${userId}/transactions`);
-            const q = query(userTransactionsColRef, orderBy("timestamp", "desc"));
-
-            onSnapshot(q, (snapshot) => {
-                let totalIncome = 0;
-                let totalExpenses = 0;
-                let transactions = [];
-
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const transaction = { ...data, id: doc.id };
-                    transactions.push(transaction);
-
-                    if (transaction.type === 'income') {
-                        totalIncome += transaction.amount;
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        document.getElementById('user-id-display').textContent = `ID do Usuário: ${userId}`;
+                        setupRealtimeListener();
                     } else {
-                        totalExpenses += transaction.amount;
+                        console.log("Usuário desconectado.");
+                        isAuthReady = false;
+                        userId = null;
                     }
                 });
 
-                updateUI(transactions, totalIncome, totalExpenses);
-            });
-        };
-
-        const formatCurrency = (amount) => {
-            return `R$ ${amount.toFixed(2).replace('.', ',')}`;
-        };
-
-        const updateUI = (transactions, totalIncome, totalExpenses) => {
-            totalRevenueEl.textContent = formatCurrency(totalIncome);
-            totalExpensesEl.textContent = formatCurrency(totalExpenses);
-            finalBalanceEl.textContent = formatCurrency(totalIncome - totalExpenses);
-
-            if (transactions.length === 0) {
-                noTransactionsMsg.classList.remove('hidden');
-                transactionsListEl.innerHTML = '';
-            } else {
-                noTransactionsMsg.classList.add('hidden');
-                transactionsListEl.innerHTML = transactions.map(t => `
-                    <div class="p-4 rounded-lg flex items-center justify-between shadow-sm border border-gray-200">
-                        <div>
-                            <p class="text-sm font-semibold">${t.description}</p>
-                            <p class="text-xs text-gray-500">${t.category}</p>
-                        </div>
-                        <div class="flex items-center">
-                            <span class="text-sm font-bold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
-                                ${t.type === 'income' ? '+' : '-'} ${formatCurrency(t.amount)}
-                            </span>
-                             <button data-id="${t.id}" class="delete-btn ml-4 text-red-500 hover:text-red-700 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
+            } catch (e) {
+                console.error("Erro ao inicializar o Firebase ou autenticar: ", e);
+                document.getElementById('status-message').textContent = `Erro ao inicializar: ${e.message}`;
             }
-        };
+        }
 
-        // --- Event Listeners ---
-        addTransactionBtn.addEventListener('click', async () => {
-            const type = transactionTypeEl.value;
-            const amount = parseFloat(transactionAmountEl.value);
-            const description = transactionDescriptionEl.value;
-            const category = transactionCategoryEl.value;
+        function setupRealtimeListener() {
+            if (!isAuthReady || !userId) {
+                console.warn("Autenticação não pronta. Listener não iniciado.");
+                return;
+            }
+            
+            const transactionsPath = `/artifacts/${appId}/users/${userId}/transactions`;
+            const transactionsCollection = collection(db, transactionsPath);
 
-            if (isNaN(amount) || amount <= 0 || !description) {
-                addTransactionMessage.textContent = "Por favor, preencha todos os campos corretamente.";
-                addTransactionMessage.classList.remove('hidden');
+            onSnapshot(transactionsCollection, (snapshot) => {
+                const transactions = [];
+                snapshot.forEach(doc => {
+                    transactions.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Sort transactions by date descending
+                transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                renderTransactions(transactions);
+                updateDashboard(transactions);
+            }, (error) => {
+                console.error("Erro ao ouvir a coleção de transações: ", error);
+                document.getElementById('status-message').textContent = 'Erro ao carregar dados em tempo real.';
+            });
+        }
+        
+        function updateDashboard(transactions) {
+            const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+            const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+            const balance = totalIncome - totalExpenses;
+
+            document.getElementById('total-income').textContent = `R$ ${totalIncome.toFixed(2)}`;
+            document.getElementById('total-expenses').textContent = `R$ ${totalExpenses.toFixed(2)}`;
+            document.getElementById('current-balance').textContent = `R$ ${balance.toFixed(2)}`;
+            
+            if (balance < 0) {
+                document.getElementById('current-balance').classList.add('text-red-500');
+                document.getElementById('current-balance').classList.remove('text-green-500');
+            } else {
+                document.getElementById('current-balance').classList.add('text-green-500');
+                document.getElementById('current-balance').classList.remove('text-red-500');
+            }
+        }
+        
+        function renderTransactions(transactions) {
+            const list = document.getElementById('transactions-list');
+            list.innerHTML = '';
+            if (transactions.length === 0) {
+                list.innerHTML = `<p class="text-gray-500 text-center py-4">Nenhuma transação registrada ainda.</p>`;
                 return;
             }
 
-            addTransactionMessage.classList.add('hidden');
+            transactions.forEach(t => {
+                const item = document.createElement('li');
+                item.classList.add('bg-white', 'p-4', 'rounded-lg', 'shadow', 'flex', 'justify-between', 'items-center', 'mb-2');
+                const isExpense = t.type === 'expense';
+                
+                item.innerHTML = `
+                    <div>
+                        <p class="font-semibold text-gray-800">${t.description}</p>
+                        <p class="text-sm text-gray-500">${new Date(t.date).toLocaleDateString()}</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <p class="font-bold ${isExpense ? 'text-red-500' : 'text-green-500'}">
+                            ${isExpense ? '- ' : '+ '}R$ ${t.amount.toFixed(2)}
+                        </p>
+                        <button onclick="editTransaction('${t.id}')" class="text-blue-500 hover:text-blue-700 transition duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zm-3.586 3.586l-7.793 7.793c-.43.43-.648.86-.707 1.343a.5.5 0 00.106.354l1.383 1.383a.5.5 0 00.354.106c.483-.059.913-.277 1.343-.707l7.793-7.793-2.828-2.828z" />
+                            </svg>
+                        </button>
+                        <button onclick="deleteTransaction('${t.id}')" class="text-red-500 hover:text-red-700 transition duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 11-2 0v6a1 1 0 112 0V8z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+        
+        window.addTransaction = async () => {
+            if (!isAuthReady || !userId) {
+                showModal('Erro: Autenticação não concluída. Por favor, aguarde.');
+                return;
+            }
 
-            const newTransaction = {
-                type: type,
-                amount: amount,
-                description: description,
-                category: category,
-                timestamp: serverTimestamp()
-            };
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const type = document.getElementById('type').value;
+
+            if (!description || isNaN(amount) || amount <= 0) {
+                showModal('Por favor, preencha todos os campos com valores válidos.');
+                return;
+            }
+            
+            const transactionsPath = `/artifacts/${appId}/users/${userId}/transactions`;
+            const transactionsCollection = collection(db, transactionsPath);
 
             try {
-                const userTransactionsColRef = collection(db, `artifacts/${appId}/users/${userId}/transactions`);
-                await addDoc(userTransactionsColRef, newTransaction);
-                
-                // Clear inputs
-                transactionAmountEl.value = '';
-                transactionDescriptionEl.value = '';
-                
-            } catch (e) {
-                console.error("Erro ao adicionar transação:", e);
-                addTransactionMessage.textContent = "Erro ao salvar transação. Tente novamente.";
-                addTransactionMessage.classList.remove('hidden');
-            }
-        });
-
-        document.addEventListener('click', async (e) => {
-            if (e.target.closest('.delete-btn')) {
-                const button = e.target.closest('.delete-btn');
-                const transactionId = button.dataset.id;
-                try {
-                    const transactionDocRef = doc(db, `artifacts/${appId}/users/${userId}/transactions`, transactionId);
-                    await deleteDoc(transactionDocRef);
-                } catch (e) {
-                    console.error("Erro ao deletar transação:", e);
-                }
-            }
-        });
-
-        copyButton.addEventListener('click', () => {
-            const userIdText = userIdDisplay.textContent;
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(userIdText).then(() => {
-                    showMessage("ID copiado para a área de transferência!", 'green');
-                }).catch(err => {
-                    fallbackCopyTextToClipboard(userIdText);
+                await addDoc(transactionsCollection, {
+                    description: description,
+                    amount: amount,
+                    type: type,
+                    date: new Date().toISOString(),
                 });
-            } else {
-                fallbackCopyTextToClipboard(userIdText);
+                document.getElementById('transaction-form').reset();
+                showModal('Transação adicionada com sucesso!');
+            } catch (e) {
+                console.error("Erro ao adicionar documento: ", e);
+                showModal(`Erro ao adicionar transação: ${e.message}`);
             }
-        });
+        }
+        
+        window.deleteTransaction = async (id) => {
+            if (!isAuthReady || !userId) {
+                showModal('Erro: Autenticação não concluída. Por favor, aguarde.');
+                return;
+            }
+            
+            const confirmation = confirm("Tem certeza de que deseja excluir esta transação?");
+            if (!confirmation) return;
 
-        function fallbackCopyTextToClipboard(text) {
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.position = "fixed";
-            textArea.style.top = 0;
-            textArea.style.left = 0;
-            textArea.style.width = "2em";
-            textArea.style.height = "2em";
-            textArea.style.padding = 0;
-            textArea.style.border = "none";
-            textArea.style.outline = "none";
-            textArea.style.boxShadow = "none";
-            textArea.style.background = "transparent";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
+            const docPath = `/artifacts/${appId}/users/${userId}/transactions/${id}`;
+            const transactionDoc = doc(db, docPath);
+
             try {
-                const successful = document.execCommand('copy');
-                const msg = successful ? 'bem-sucedida' : 'sem sucesso';
-                console.log('Cópia de fallback foi ' + msg);
-                showMessage("ID copiado para a área de transferência!", 'green');
-            } catch (err) {
-                console.error('Oops, incapaz de copiar', err);
-                showMessage("Falha ao copiar. Por favor, copie manualmente.", 'red');
+                await deleteDoc(transactionDoc);
+                showModal('Transação excluída com sucesso.');
+            } catch (e) {
+                console.error("Erro ao excluir documento: ", e);
+                showModal(`Erro ao excluir transação: ${e.message}`);
             }
-            document.body.removeChild(textArea);
+        }
+        
+        window.editTransaction = async (id) => {
+            if (!isAuthReady || !userId) {
+                showModal('Erro: Autenticação não concluída. Por favor, aguarde.');
+                return;
+            }
+            
+            const docPath = `/artifacts/${appId}/users/${userId}/transactions/${id}`;
+            const transactionDoc = doc(db, docPath);
+            const docSnap = await getDoc(transactionDoc);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                document.getElementById('description').value = data.description;
+                document.getElementById('amount').value = data.amount;
+                document.getElementById('type').value = data.type;
+
+                const form = document.getElementById('transaction-form');
+                form.onsubmit = async (e) => {
+                    e.preventDefault();
+                    const newDescription = document.getElementById('description').value;
+                    const newAmount = parseFloat(document.getElementById('amount').value);
+                    const newType = document.getElementById('type').value;
+                    
+                    if (!newDescription || isNaN(newAmount) || newAmount <= 0) {
+                        showModal('Por favor, preencha todos os campos com valores válidos.');
+                        return;
+                    }
+
+                    try {
+                        await updateDoc(transactionDoc, {
+                            description: newDescription,
+                            amount: newAmount,
+                            type: newType,
+                        });
+                        form.onsubmit = (event) => { event.preventDefault(); window.addTransaction(); };
+                        form.reset();
+                        showModal('Transação atualizada com sucesso!');
+                    } catch (e) {
+                        console.error("Erro ao atualizar documento: ", e);
+                        showModal(`Erro ao atualizar transação: ${e.message}`);
+                    }
+                };
+            } else {
+                showModal("Transação não encontrada.");
+            }
         }
 
-        // --- Gemini API Integration ---
-        getAdviceBtn.addEventListener('click', async () => {
-            adviceLoading.classList.remove('hidden');
-            adviceResult.classList.add('hidden');
-            adviceResult.innerHTML = '';
-            
-            try {
-                const userTransactionsColRef = collection(db, `artifacts/${appId}/users/${userId}/transactions`);
-                const snapshot = await getDocs(userTransactionsColRef);
-                
-                if (snapshot.empty) {
-                    adviceResult.textContent = "Adicione algumas transações para obter uma análise.";
-                    adviceResult.classList.remove('hidden');
-                    adviceLoading.classList.add('hidden');
-                    return;
-                }
+        function showModal(message) {
+            const modal = document.getElementById('message-modal');
+            document.getElementById('modal-message-text').textContent = message;
+            modal.classList.remove('hidden');
+        }
 
-                const allTransactions = [];
-                let totalIncome = 0;
-                let totalExpenses = 0;
-                let expenseByCategory = {};
+        window.closeModal = () => {
+            document.getElementById('message-modal').classList.add('hidden');
+        }
 
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    allTransactions.push(data);
-                    if (data.type === 'income') {
-                        totalIncome += data.amount;
-                    } else {
-                        totalExpenses += data.amount;
-                        if (!expenseByCategory[data.category]) {
-                            expenseByCategory[data.category] = 0;
-                        }
-                        expenseByCategory[data.category] += data.amount;
-                    }
-                });
-
-                // Build the prompt for the LLM
-                const systemPrompt = "Você é um conselheiro financeiro especializado. Analise as transações financeiras de um usuário e forneça uma análise concisa, destacando padrões de consumo e dando duas a três dicas práticas e personalizadas para melhorar as finanças. Inclua uma análise detalhada por tipo de despesa, mostrando a porcentagem de cada categoria em relação ao total de despesas. Use uma linguagem profissional e clara, formatando a resposta em tópicos para facilitar a leitura. Os valores estão em Reais (R$).";
-                
-                const userQuery = `Minha receita total é R$${totalIncome.toFixed(2)}. Minhas despesas totais são R$${totalExpenses.toFixed(2)}. A distribuição das minhas despesas por categoria é: ${JSON.stringify(expenseByCategory)}. Aqui estão as minhas transações completas: ${JSON.stringify(allTransactions)}. Analise estes dados e dê-me conselhos financeiros.`;
-
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-                const payload = {
-                    contents: [{ parts: [{ text: userQuery }] }],
-                    systemInstruction: {
-                        parts: [{ text: systemPrompt }]
-                    },
-                };
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const result = await response.json();
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                
-                if (text) {
-                    adviceResult.innerHTML = `<p class="font-semibold mb-2">Análise do Consultor:</p>${text.replace(/\n/g, '<br>')}`;
-                } else {
-                    adviceResult.textContent = "Não foi possível obter uma análise. Tente novamente mais tarde.";
-                }
-
-                adviceResult.classList.remove('hidden');
-                adviceLoading.classList.add('hidden');
-            } catch (e) {
-                console.error("Erro na chamada da API Gemini:", e);
-                adviceResult.textContent = "Ocorreu um erro ao obter a análise. Verifique sua conexão ou tente mais tarde.";
-                adviceResult.classList.remove('hidden');
-                adviceLoading.classList.add('hidden');
-            }
-        });
-        
-        signIn();
+        initFirebase();
     </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .container {
+            max-width: 800px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Modal de Mensagem -->
+    <div id="message-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+            <p id="modal-message-text" class="text-lg font-semibold text-gray-800 mb-4"></p>
+            <button onclick="closeModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">OK</button>
+        </div>
+    </div>
+
+    <div class="container mx-auto p-6 bg-white rounded-xl shadow-lg">
+        <header class="text-center mb-6">
+            <h1 class="text-4xl font-bold text-gray-900">Gerenciador Financeiro Pessoal</h1>
+            <p id="user-id-display" class="text-sm text-gray-500 mt-2"></p>
+            <p id="status-message" class="text-red-500 text-sm mt-1"></p>
+            <div id="loading-indicator" class="mt-4">
+                <div class="w-8 h-8 border-4 border-dashed rounded-full animate-spin border-blue-600 mx-auto"></div>
+                <p class="text-gray-500 text-sm mt-2">Carregando...</p>
+            </div>
+        </header>
+
+        <!-- Seção do Dashboard -->
+        <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div class="bg-green-100 p-4 rounded-xl shadow-sm text-center">
+                <h3 class="text-lg font-semibold text-green-700">Entradas</h3>
+                <p id="total-income" class="text-2xl font-bold text-green-600 mt-2">R$ 0.00</p>
+            </div>
+            <div class="bg-red-100 p-4 rounded-xl shadow-sm text-center">
+                <h3 class="text-lg font-semibold text-red-700">Saídas</h3>
+                <p id="total-expenses" class="text-2xl font-bold text-red-600 mt-2">R$ 0.00</p>
+            </div>
+            <div class="bg-blue-100 p-4 rounded-xl shadow-sm text-center">
+                <h3 class="text-lg font-semibold text-blue-700">Saldo Atual</h3>
+                <p id="current-balance" class="text-2xl font-bold text-blue-600 mt-2">R$ 0.00</p>
+            </div>
+        </section>
+
+        <!-- Formulário para Adicionar Transação -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Adicionar Nova Transação</h2>
+            <form id="transaction-form" onsubmit="event.preventDefault(); addTransaction();" class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-50 p-6 rounded-xl shadow-inner">
+                <div class="sm:col-span-1">
+                    <label for="description" class="block text-sm font-medium text-gray-700">Descrição</label>
+                    <input type="text" id="description" placeholder="Ex: Salário, Aluguel" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2" required>
+                </div>
+                <div class="sm:col-span-1">
+                    <label for="amount" class="block text-sm font-medium text-gray-700">Valor (R$)</label>
+                    <input type="number" id="amount" step="0.01" min="0" placeholder="Ex: 1500.00" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2" required>
+                </div>
+                <div class="sm:col-span-1">
+                    <label for="type" class="block text-sm font-medium text-gray-700">Tipo</label>
+                    <select id="type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                        <option value="income">Entrada</option>
+                        <option value="expense">Saída</option>
+                    </select>
+                </div>
+                <div class="sm:col-span-3">
+                    <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-xl hover:bg-blue-700 transition duration-300 shadow-lg">Adicionar Transação</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Seção de Histórico de Transações -->
+        <section>
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Histórico de Transações</h2>
+            <ul id="transactions-list">
+                <!-- As transações serão renderizadas aqui pelo JavaScript -->
+            </ul>
+        </section>
+
+    </div>
 </body>
 </html>
