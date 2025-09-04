@@ -1,11 +1,33 @@
-const CACHE_NAME = 'financas-cache-v2'; // Alteramos a versão do cache
+const CACHE_NAME = 'financas-cache-v4'; // Versão atualizada do cache
+const urlsToCache = [
+  './',
+  './index.html',
+  'https://cdn.tailwindcss.com'
+];
 
 self.addEventListener('install', (event) => {
-  // Apenas pré-caching do ficheiro principal
+  // Pré-caching de todos os ficheiros essenciais
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Pré-caching do ficheiro principal');
-      return cache.add('./index.html');
+      console.log('Pré-caching dos ficheiros principais');
+      return cache.addAll(urlsToCache);
+    })
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  // Limpa caches antigos
+  const cacheWhitelist = [CACHE_NAME];
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.log(`Eliminando cache antigo: ${cacheName}`);
+            return caches.delete(cacheName);
+          }
+        })
+      );
     })
   );
 });
@@ -22,7 +44,6 @@ self.addEventListener('fetch', (event) => {
         // Se não estiver em cache, busca-a na rede
         return fetch(event.request)
           .then((fetchResponse) => {
-            // Verifica se a resposta é válida e armazena no cache
             if (!fetchResponse || fetchResponse.status !== 200 || fetchResponse.type !== 'basic') {
               return fetchResponse;
             }
@@ -35,9 +56,7 @@ self.addEventListener('fetch', (event) => {
             return fetchResponse;
           })
           .catch((error) => {
-            // Se a busca na rede falhar, você pode retornar uma página offline
             console.error('Falha ao buscar recurso:', error);
-            // Poderia retornar uma página de erro aqui, se existisse
           });
       })
   );
