@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -13,7 +12,6 @@
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
         }
-
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -26,7 +24,6 @@
             align-items: center;
             z-index: 1000;
         }
-
         .modal {
             background-color: white;
             padding: 24px;
@@ -36,35 +33,28 @@
             width: 90%;
             text-align: center;
         }
-
         .page {
             display: none;
         }
-
         .page.active {
             display: block;
         }
-
         .nav-item.active {
             border-bottom: 2px solid #4f46e5;
             color: #4f46e5;
         }
-
         .table-container {
             overflow-x: auto;
         }
-
         table {
             width: 100%;
             border-collapse: collapse;
         }
-
         th, td {
             padding: 12px;
             text-align: left;
             border-bottom: 1px solid #e5e7eb;
         }
-
         th {
             background-color: #f9fafb;
             font-weight: 600;
@@ -73,10 +63,11 @@
     </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Cole suas credenciais do Firebase aqui.
+        
+        // Substitua com suas credenciais do Firebase.
+        // Você pode encontrá-las no console do Firebase > Configurações do Projeto > Seus aplicativos.
         const firebaseConfig = {
             apiKey: "AIzaSyDdZ4NnOsYCn8Mbt4QkY8SiEjnvbwH_ucY",
             authDomain: "planner-financeiro-85c85.firebaseapp.com",
@@ -86,14 +77,19 @@
             appId: "1:481092436809:web:f63a2a16bd35fd864c5098",
             measurementId: "G-LM7P7ZB655"
         };
-
+        
         let db, auth, userId;
         let unsubscribeFromFirestore;
         let allTransactions = [];
 
         const mainContent = document.getElementById('main-content');
-        const loginContainer = document.getElementById('login-container');
+        const authContent = document.getElementById('auth-content');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const showRegisterBtn = document.getElementById('show-register-btn');
+        const showLoginBtn = document.getElementById('show-login-btn');
         const userIdDisplay = document.getElementById('user-id-display');
+        const logoutBtn = document.getElementById('logout-btn');
         const navLinks = document.querySelectorAll('.nav-link');
         const pages = document.querySelectorAll('.page');
         const transactionForm = document.getElementById('transaction-form');
@@ -145,31 +141,27 @@
         });
 
         const initializeFirebase = async () => {
-            if (firebaseConfig.apiKey === "YOUR_API_KEY") {
-                console.error("Firebase config is missing. Please add your credentials.");
-                loginContainer.innerHTML = `<h2 class="text-2xl font-bold mb-4">Falha ao Conectar</h2><p class="text-gray-600">Por favor, insira suas credenciais do Firebase no código para que o aplicativo funcione.</p>`;
-                return;
-            }
-
             try {
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                onAuthStateChanged(auth, async (user) => {
+                
+                onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
                         userIdDisplay.textContent = `Seu ID de Usuário: ${userId}`;
                         mainContent.classList.remove('hidden');
-                        loginContainer.classList.add('hidden');
+                        authContent.classList.add('hidden');
                         showPage('page1');
                         setupFirestoreListener();
                     } else {
-                        await signInAnonymously(auth);
+                        mainContent.classList.add('hidden');
+                        authContent.classList.remove('hidden');
                     }
                 });
             } catch (error) {
                 console.error("Firebase initialization failed:", error);
-                loginContainer.innerHTML = `<h2 class="text-2xl font-bold mb-4">Erro de Conexão</h2><p class="text-gray-600">Ocorreu um erro ao tentar conectar com o banco de dados. Por favor, tente recarregar a página.</p><p class="mt-4 text-sm text-gray-500">Detalhes: ${error.message}</p>`;
+                showCustomModal(`Erro de Conexão: ${error.message}`, false);
             }
         };
 
@@ -192,6 +184,78 @@
                 console.error("Error listening to transactions:", error);
             });
         };
+
+        // --- Autenticação ---
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = loginForm.email.value;
+            const password = loginForm.password.value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                loginForm.reset();
+            } catch (error) {
+                let errorMessage;
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                        errorMessage = 'E-mail inválido.';
+                        break;
+                    case 'auth/user-not-found':
+                    case 'auth/wrong-password':
+                        errorMessage = 'Credenciais incorretas. Verifique seu e-mail e senha.';
+                        break;
+                    default:
+                        errorMessage = `Erro ao fazer login: ${error.message}`;
+                }
+                await showCustomModal(errorMessage, false);
+            }
+        });
+
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = registerForm.email.value;
+            const password = registerForm.password.value;
+            if (password.length < 6) {
+                await showCustomModal('A senha deve ter pelo menos 6 caracteres.', false);
+                return;
+            }
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                registerForm.reset();
+                await showCustomModal('Cadastro realizado com sucesso! Você será logado automaticamente.', false);
+            } catch (error) {
+                let errorMessage;
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                        errorMessage = 'E-mail inválido.';
+                        break;
+                    case 'auth/email-already-in-use':
+                        errorMessage = 'Este e-mail já está em uso.';
+                        break;
+                    default:
+                        errorMessage = `Erro ao registrar: ${error.message}`;
+                }
+                await showCustomModal(errorMessage, false);
+            }
+        });
+
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                showCustomModal('Você saiu da sua conta com sucesso.', false);
+            } catch (error) {
+                showCustomModal(`Erro ao sair: ${error.message}`, false);
+            }
+        });
+
+        showRegisterBtn.addEventListener('click', () => {
+            loginForm.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+        });
+
+        showLoginBtn.addEventListener('click', () => {
+            registerForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+        });
 
         // --- Página 1: Cadastro e Visualização ---
         const renderTransactions = (transactions) => {
@@ -342,7 +406,6 @@
                 analysisText += '<h3 class="text-lg font-bold text-gray-800 mb-2">Análise Financeira</h3>';
                 analysisText += '<ul class="list-disc list-inside space-y-2 text-gray-600">';
 
-                // Análise do saldo
                 if (totalIncome > totalExpense) {
                     analysisText += `<li>Parabéns! Suas receitas superam suas despesas em **R$ ${(totalIncome - totalExpense).toFixed(2)}**. Você está no caminho certo para a estabilidade financeira.</li>`;
                 } else if (totalExpense > totalIncome) {
@@ -351,7 +414,6 @@
                     analysisText += `<li>Suas receitas e despesas estão equilibradas. Mantenha o controle para começar a poupar.</li>`;
                 }
 
-                // Análise do maior gasto
                 if (maxCategoryEntry) {
                     const [maxCategory, maxAmount] = maxCategoryEntry;
                     const percentageOfTotal = (maxAmount / totalExpense) * 100;
@@ -419,21 +481,53 @@
 </head>
 <body class="bg-gray-100 p-4 min-h-screen flex items-center justify-center">
 
-    <div id="login-container" class="text-center p-8 bg-white rounded-lg shadow-lg">
-        <h2 class="text-2xl font-bold mb-4">Carregando seu Planner...</h2>
-        <p class="text-gray-600">Aguarde enquanto preparamos seu ambiente financeiro pessoal.</p>
-        <div class="mt-4 flex justify-center items-center">
-            <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+    <!-- Auth Content -->
+    <div id="auth-content" class="text-center p-8 bg-white rounded-lg shadow-lg max-w-sm w-full">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">Acesso ao Planner Financeiro</h2>
+        
+        <!-- Login Form -->
+        <form id="login-form" class="space-y-4">
+            <div>
+                <input type="email" name="email" placeholder="E-mail" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+            </div>
+            <div>
+                <input type="password" name="password" placeholder="Senha" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+            </div>
+            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md font-semibold hover:bg-indigo-700 transition-colors">Entrar</button>
+        </form>
+
+        <!-- Register Form (hidden by default) -->
+        <form id="register-form" class="space-y-4 hidden">
+            <div>
+                <input type="email" name="email" placeholder="E-mail" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+            </div>
+            <div>
+                <input type="password" name="password" placeholder="Senha (min. 6 caracteres)" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+            </div>
+            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md font-semibold hover:bg-indigo-700 transition-colors">Cadastrar</button>
+        </form>
+
+        <div class="mt-4 text-sm text-gray-600">
+            <p>
+                <button id="show-register-btn" class="text-indigo-600 hover:text-indigo-800 transition-colors font-medium">Não tem uma conta? Cadastre-se.</button>
+            </p>
+            <p class="hidden">
+                <button id="show-login-btn" class="text-indigo-600 hover:text-indigo-800 transition-colors font-medium">Já tem uma conta? Entrar.</button>
+            </p>
         </div>
     </div>
 
+    <!-- Main Content -->
     <div id="main-content" class="container mx-auto p-6 bg-white shadow-xl rounded-2xl max-w-6xl hidden">
         <div class="border-b border-gray-200 mb-6">
-            <h1 class="text-3xl font-bold text-gray-800 text-center mb-4">Planner Financeiro Pessoal</h1>
-            <p id="user-id-display" class="text-sm text-gray-500 mb-6 text-center break-all"></p>
+            <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+                <h1 class="text-3xl font-bold text-gray-800 text-center md:text-left">Planner Financeiro Pessoal</h1>
+                <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                    <p id="user-id-display" class="text-sm text-gray-500 break-all"></p>
+                    <button id="logout-btn" class="bg-red-500 text-white py-1 px-4 rounded-md font-semibold hover:bg-red-600 transition-colors">Sair</button>
+                </div>
+            </div>
+            
             <nav class="-mb-px flex justify-center space-x-8" aria-label="Tabs">
                 <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page1">Cadastro & Extrato</a>
                 <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page2">Análise Gráfica</a>
@@ -441,6 +535,7 @@
             </nav>
         </div>
         
+        <!-- Conteúdo da Página 1 -->
         <div id="page1" class="page active grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
                 <h2 class="text-2xl font-semibold text-gray-700 mb-4">Novo Lançamento</h2>
@@ -512,12 +607,14 @@
                             </tr>
                         </thead>
                         <tbody id="transaction-table-body">
-                            </tbody>
+                            <!-- Transações serão adicionadas aqui -->
+                        </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
+        <!-- Conteúdo da Página 2 -->
         <div id="page2" class="page">
             <h2 class="text-2xl font-semibold text-gray-700 mb-6 text-center">Análise Financeira Gráfica</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -536,6 +633,7 @@
             </div>
         </div>
 
+        <!-- Conteúdo da Página 3 -->
         <div id="page3" class="page">
             <h2 class="text-2xl font-semibold text-gray-700 mb-6 text-center">Análise de Gastos com IA</h2>
             <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
@@ -556,6 +654,7 @@
         </div>
     </div>
 
+    <!-- Custom Modal -->
     <div id="custom-modal" class="modal-overlay">
         <div class="modal">
             <p id="modal-message" class="text-lg text-gray-800 mb-4"></p>
@@ -565,7 +664,5 @@
             </div>
         </div>
     </div>
-
 </body>
 </html>
-```
