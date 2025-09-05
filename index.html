@@ -64,7 +64,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, query, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         
         // Substitua com suas credenciais do Firebase para usar no GitHub Pages.
         const firebaseConfig = {
@@ -511,12 +511,16 @@
         // Função para calcular o progresso do objetivo
         const calcularProgresso = (objetivo, transactions) => {
             let totalSaved = 0;
-            const objectiveStartDate = objetivo.startDate.toDate();
+            // Garantir que a data seja um objeto Date, seja Timestamp do Firestore ou Date
+            const objectiveStartDate = objetivo.startDate.toDate ? objetivo.startDate.toDate() : new Date(objetivo.startDate);
             
             transactions.forEach(t => {
-                if (t.type === 'income' && t.timestamp.toDate() >= objectiveStartDate) {
+                // Ajustar para garantir que o carimbo de data/hora da transação seja um objeto Date
+                const transactionDate = t.timestamp.toDate ? t.timestamp.toDate() : new Date(t.timestamp);
+                
+                if (t.type === 'income' && transactionDate >= objectiveStartDate) {
                     totalSaved += t.amount;
-                } else if (t.type === 'expense' && t.timestamp.toDate() >= objectiveStartDate) {
+                } else if (t.type === 'expense' && transactionDate >= objectiveStartDate) {
                     totalSaved -= t.amount;
                 }
             });
@@ -573,24 +577,25 @@
             const nome = document.getElementById('nome-objetivo-cadastrar').value;
             const valor = parseFloat(document.getElementById('valor-objetivo-cadastrar').value);
             const tempo = parseInt(document.getElementById('tempo-objetivo-cadastrar').value);
-            const startDate = new Date(document.getElementById('start-date-cadastrar').value);
+            const startDate = document.getElementById('start-date-cadastrar').value;
 
-            if (nome && !isNaN(valor) && valor > 0 && !isNaN(tempo) && tempo > 0 && !isNaN(startDate.getTime())) {
-                const novoObjetivo = {
+            if (nome && !isNaN(valor) && valor > 0 && !isNaN(tempo) && tempo > 0 && startDate) {
+                // Converte a string de data para um Timestamp do Firestore
+                const newObjective = {
                     nome,
                     valor,
                     tempo,
-                    startDate
+                    startDate: Timestamp.fromDate(new Date(startDate))
                 };
 
                 try {
                     const objetivosCollectionRef = collection(db, `users/${userId}/objectives`);
-                    await addDoc(objetivosCollectionRef, novoObjetivo);
+                    await addDoc(objetivosCollectionRef, newObjective);
                     formObjetivoCadastrar.reset();
                     await showCustomModal('Objetivo cadastrado com sucesso!', false);
                 } catch (e) {
                     console.error("Error adding objective: ", e);
-                    await showCustomModal('Erro ao cadastrar objetivo. Por favor, tente novamente.', false);
+                    await showCustomModal(`Erro ao cadastrar objetivo: ${e.message}`, false);
                 }
             } else {
                 showCustomModal('Por favor, preencha todos os campos com valores válidos para o objetivo.', false);
