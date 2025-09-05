@@ -66,7 +66,6 @@
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, query, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         
-        // Substitua com suas credenciais do Firebase para usar no GitHub Pages.
         const firebaseConfig = {
             apiKey: "AIzaSyDdZ4NnOsYCn8Mbt4QkY8SiEjnvbwH_ucY",
             authDomain: "planner-financeiro-85c85.firebaseapp.com",
@@ -579,7 +578,6 @@
             }
         });
         
-        // Lógica para o cálculo de objetivo sem cadastro
         formObjetivoCalcular.addEventListener('submit', (e) => {
             e.preventDefault();
             const valor = parseFloat(document.getElementById('valor-objetivo-calcular').value);
@@ -617,6 +615,7 @@
                 resultadoObjetivoCalculado.classList.add('hidden');
             }
         });
+
 
         window.deleteObjective = async (docId) => {
             if (!db || !userId) {
@@ -870,8 +869,8 @@
                                 </div>
                             </div>
                             <div class="flex items-center space-x-4">
-                                <label class="flex items-center"><input type="radio" name="periodo-calcular" value="anual" class="form-radio text-indigo-600 focus:ring-indigo-500"><span class="ml-2 text-sm text-gray-700">Economia Anual</span></label>
-                                <label class="flex items-center"><input type="radio" name="periodo-calcular" value="mensal" checked class="form-radio text-indigo-600 focus:ring-indigo-500"><span class="ml-2 text-sm text-gray-700">Economia Mensal</span></label>
+                                <label class="flex items-center"><input type="radio" name="periodo-calcular" value="anual" class="form-radio text-indigo-600 focus:ring-indigo-500"><span class="ml-2 text-sm text-gray-700">Economizar Anualmente</span></label>
+                                <label class="flex items-center"><input type="radio" name="periodo-calcular" value="mensal" checked class="form-radio text-indigo-600 focus:ring-indigo-500"><span class="ml-2 text-sm text-gray-700">Economizar Mensalmente</span></label>
                             </div>
                             <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-md font-semibold hover:bg-green-700 transition-colors">Calcular Valor</button>
                         </form>
