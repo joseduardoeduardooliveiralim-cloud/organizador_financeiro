@@ -1,923 +1,901 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planner Financeiro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-        }
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .modal {
-            background-color: white;
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-        }
-        .page {
-            display: none;
-        }
-        .page.active {
-            display: block;
-        }
-        .nav-item.active {
-            border-bottom: 2px solid #4f46e5;
-            color: #4f46e5;
-        }
-        .table-container {
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        th {
-            background-color: #f9fafb;
-            font-weight: 600;
-            color: #4b5563;
-        }
-    </style>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, query, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        
-        // Substitua com suas credenciais do Firebase para usar no GitHub Pages.
-        const firebaseConfig = {
-            apiKey: "AIzaSyDdZ4NnOsYCn8Mbt4QkY8SiEjnvbwH_ucY",
-            authDomain: "planner-financeiro-85c85.firebaseapp.com",
-            projectId: "planner-financeiro-85c85",
-            storageBucket: "planner-financeiro-85c85.firebasestorage.app",
-            messagingSenderId: "481092436809",
-            appId: "1:481092436809:web:f63a2a16bd35fd864c5098",
-            measurementId: "G-LM7P7ZB655"
-        };
-        
-        let db, auth, userId;
-        let unsubscribeFromTransactions;
-        let unsubscribeFromObjectives;
-        let allTransactions = [];
-        let allObjectives = [];
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planner Financeiro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal {
+            background-color: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+        .nav-item.active {
+            border-bottom: 2px solid #4f46e5;
+            color: #4f46e5;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: #4b5563;
+        }
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, query, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        
+        // Substitua com suas credenciais do Firebase para usar no GitHub Pages.
+        const firebaseConfig = {
+            apiKey: "AIzaSyDdZ4NnOsYCn8Mbt4QkY8SiEjnvbwH_ucY",
+            authDomain: "planner-financeiro-85c85.firebaseapp.com",
+            projectId: "planner-financeiro-85c85",
+            storageBucket: "planner-financeiro-85c85.firebasestorage.app",
+            messagingSenderId: "481092436809",
+            appId: "1:481092436809:web:f63a2a16bd35fd864c5098",
+            measurementId: "G-LM7P7ZB655"
+        };
+        
+        let db, auth, userId;
+        let unsubscribeFromTransactions;
+        let unsubscribeFromObjectives;
+        let allTransactions = [];
+        let allObjectives = [];
 
-        const mainContent = document.getElementById('main-content');
-        const authContent = document.getElementById('auth-content');
-        const loadingSpinner = document.getElementById('loading-spinner');
-        const loginForm = document.getElementById('login-form');
-        const registerForm = document.getElementById('register-form');
-        const showRegisterBtn = document.getElementById('show-register-btn');
-        const showLoginBtn = document.getElementById('show-login-btn');
-        const userIdDisplay = document.getElementById('user-id-display');
-        const logoutBtn = document.getElementById('logout-btn');
-        const navLinks = document.querySelectorAll('.nav-link');
-        const pages = document.querySelectorAll('.page');
-        const transactionForm = document.getElementById('transaction-form');
-        const totalIncomeEl = document.getElementById('total-income');
-        const totalExpenseEl = document.getElementById('total-expense');
-        const currentBalanceEl = document.getElementById('current-balance');
-        const transactionTableBody = document.getElementById('transaction-table-body');
-        const pieChartCtx = document.getElementById('finance-chart').getContext('2d');
-        const barChartCtx = document.getElementById('expenses-chart').getContext('2d');
-        const iaAnalysisEl = document.getElementById('ia-analysis');
-        const modalOverlay = document.getElementById('custom-modal');
-        const modalMessageEl = document.getElementById('modal-message');
-        const modalOkBtn = document.getElementById('modal-ok-btn');
-        const modalCancelBtn = document.getElementById('modal-cancel-btn');
-        const filterInput = document.getElementById('filter-input');
-        const filterCategory = document.getElementById('filter-category');
+        const mainContent = document.getElementById('main-content');
+        const authContent = document.getElementById('auth-content');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const showRegisterBtn = document.getElementById('show-register-btn');
+        const showLoginBtn = document.getElementById('show-login-btn');
+        const userIdDisplay = document.getElementById('user-id-display');
+        const logoutBtn = document.getElementById('logout-btn');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const pages = document.querySelectorAll('.page');
+        const transactionForm = document.getElementById('transaction-form');
+        const totalIncomeEl = document.getElementById('total-income');
+        const totalExpenseEl = document.getElementById('total-expense');
+        const currentBalanceEl = document.getElementById('current-balance');
+        const transactionTableBody = document.getElementById('transaction-table-body');
+        const pieChartCtx = document.getElementById('finance-chart').getContext('2d');
+        const barChartCtx = document.getElementById('expenses-chart').getContext('2d');
+        const iaAnalysisEl = document.getElementById('ia-analysis');
+        const modalOverlay = document.getElementById('custom-modal');
+        const modalMessageEl = document.getElementById('modal-message');
+        const modalOkBtn = document.getElementById('modal-ok-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const filterInput = document.getElementById('filter-input');
+        const filterCategory = document.getElementById('filter-category');
 
-        let pieChart;
-        let barChart;
+        let pieChart;
+        let barChart;
 
-        const showCustomModal = (message, isConfirm = false) => {
-            modalMessageEl.textContent = message;
-            modalCancelBtn.classList.toggle('hidden', !isConfirm);
-            modalOverlay.style.display = 'flex';
-            return new Promise((resolve) => {
-                modalOkBtn.onclick = () => {
-                    modalOverlay.style.display = 'none';
-                    resolve(true);
-                };
-                modalCancelBtn.onclick = () => {
-                    modalOverlay.style.display = 'none';
-                    resolve(false);
-                };
-            });
-        };
+        const showCustomModal = (message, isConfirm = false) => {
+            modalMessageEl.textContent = message;
+            modalCancelBtn.classList.toggle('hidden', !isConfirm);
+            modalOverlay.style.display = 'flex';
+            return new Promise((resolve) => {
+                modalOkBtn.onclick = () => {
+                    modalOverlay.style.display = 'none';
+                    resolve(true);
+                };
+                modalCancelBtn.onclick = () => {
+                    modalOverlay.style.display = 'none';
+                    resolve(false);
+                };
+            });
+        };
 
-        const showPage = (pageId) => {
-            pages.forEach(page => page.classList.remove('active'));
-            navLinks.forEach(link => link.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-            document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
-        };
+        const showPage = (pageId) => {
+            pages.forEach(page => page.classList.remove('active'));
+            navLinks.forEach(link => link.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+        };
 
-        navLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                showPage(link.dataset.page);
-            });
-        });
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                showPage(link.dataset.page);
+            });
+        });
 
-        const initializeFirebase = async () => {
-            try {
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                
-                onAuthStateChanged(auth, (user) => {
-                    loadingSpinner.classList.add('hidden');
-                    if (user) {
-                        userId = user.uid;
-                        userIdDisplay.textContent = `Seu ID de Usuário: ${userId}`;
-                        mainContent.classList.remove('hidden');
-                        authContent.classList.add('hidden');
-                        showPage('page1');
-                        setupFirestoreListeners();
-                    } else {
-                        mainContent.classList.add('hidden');
-                        authContent.classList.remove('hidden');
-                    }
-                });
-            } catch (error) {
-                console.error("Firebase initialization failed:", error);
-                loadingSpinner.classList.add('hidden');
-                showCustomModal(`Erro de Conexão: ${error.message}`, false);
-            }
-        };
-        
-        const setupFirestoreListeners = () => {
-            // Unsubscribe de listeners anteriores, se existirem
-            if (unsubscribeFromTransactions) unsubscribeFromTransactions();
-            if (unsubscribeFromObjectives) unsubscribeFromObjectives();
+        const initializeFirebase = async () => {
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                
+                onAuthStateChanged(auth, (user) => {
+                    loadingSpinner.classList.add('hidden');
+                    if (user) {
+                        userId = user.uid;
+                        userIdDisplay.textContent = `Seu ID de Usuário: ${userId}`;
+                        mainContent.classList.remove('hidden');
+                        authContent.classList.add('hidden');
+                        showPage('page1');
+                        setupFirestoreListeners();
+                    } else {
+                        mainContent.classList.add('hidden');
+                        authContent.classList.remove('hidden');
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                loadingSpinner.classList.add('hidden');
+                showCustomModal(`Erro de Conexão: ${error.message}`, false);
+            }
+        };
+        
+        const setupFirestoreListeners = () => {
+            // Unsubscribe de listeners anteriores, se existirem
+            if (unsubscribeFromTransactions) unsubscribeFromTransactions();
+            if (unsubscribeFromObjectives) unsubscribeFromObjectives();
 
-            const transactionsCollectionRef = collection(db, `users/${userId}/transactions`);
-            const objectivesCollectionRef = collection(db, `users/${userId}/objectives`);
-            
-            // Listener para transações
-            const qTransactions = query(transactionsCollectionRef, orderBy("timestamp", "desc"));
-            unsubscribeFromTransactions = onSnapshot(qTransactions, (snapshot) => {
-                allTransactions = [];
-                snapshot.forEach((doc) => {
-                    allTransactions.push({ id: doc.id, ...doc.data() });
-                });
-                renderTransactions(allTransactions);
-                updateDashboard(allTransactions);
-                updateIAAnalysis(allTransactions);
-                // Atualiza os objetivos sempre que as transações mudarem
-                renderObjectives(allObjectives, allTransactions);
-            }, (error) => {
-                console.error("Error listening to transactions:", error);
-            });
+            const transactionsCollectionRef = collection(db, `users/${userId}/transactions`);
+            const objectivesCollectionRef = collection(db, `users/${userId}/objectives`);
+            
+            // Listener para transações
+            const qTransactions = query(transactionsCollectionRef, orderBy("timestamp", "desc"));
+            unsubscribeFromTransactions = onSnapshot(qTransactions, (snapshot) => {
+                allTransactions = [];
+                snapshot.forEach((doc) => {
+                    allTransactions.push({ id: doc.id, ...doc.data() });
+                });
+                renderTransactions(allTransactions);
+                updateDashboard(allTransactions);
+                updateIAAnalysis(allTransactions);
+                renderObjectives(allObjectives, allTransactions);
+            }, (error) => {
+                console.error("Error listening to transactions:", error);
+            });
 
-            // Listener para objetivos
-            const qObjectives = query(objectivesCollectionRef, orderBy("startDate", "desc"));
-            unsubscribeFromObjectives = onSnapshot(qObjectives, (snapshot) => {
-                allObjectives = [];
-                snapshot.forEach((doc) => {
-                    allObjectives.push({ id: doc.id, ...doc.data() });
-                });
-                renderObjectives(allObjectives, allTransactions);
-            }, (error) => {
-                console.error("Error listening to objectives:", error);
-            });
-        };
+            // Listener para objetivos
+            const qObjectives = query(objectivesCollectionRef, orderBy("startDate", "desc"));
+            unsubscribeFromObjectives = onSnapshot(qObjectives, (snapshot) => {
+                allObjectives = [];
+                snapshot.forEach((doc) => {
+                    allObjectives.push({ id: doc.id, ...doc.data() });
+                });
+                renderObjectives(allObjectives, allTransactions);
+            }, (error) => {
+                console.error("Error listening to objectives:", error);
+            });
+        };
 
-        // --- Autenticação ---
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = loginForm.email.value;
-            const password = loginForm.password.value;
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-                loginForm.reset();
-            } catch (error) {
-                let errorMessage;
-                switch (error.code) {
-                    case 'auth/invalid-email':
-                        errorMessage = 'E-mail inválido.';
-                        break;
-                    case 'auth/user-not-found':
-                    case 'auth/wrong-password':
-                        errorMessage = 'Credenciais incorretas. Verifique seu e-mail e senha.';
-                        break;
-                    default:
-                        errorMessage = `Erro ao fazer login: ${error.message}`;
-                }
-                await showCustomModal(errorMessage, false);
-            }
-        });
+        // --- Autenticação ---
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = loginForm.email.value;
+            const password = loginForm.password.value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                loginForm.reset();
+            } catch (error) {
+                let errorMessage;
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                        errorMessage = 'E-mail inválido.';
+                        break;
+                    case 'auth/user-not-found':
+                    case 'auth/wrong-password':
+                        errorMessage = 'Credenciais incorretas. Verifique seu e-mail e senha.';
+                        break;
+                    default:
+                        errorMessage = `Erro ao fazer login: ${error.message}`;
+                }
+                await showCustomModal(errorMessage, false);
+            }
+        });
 
-        registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = registerForm.email.value;
-            const password = registerForm.password.value;
-            if (password.length < 6) {
-                await showCustomModal('A senha deve ter pelo menos 6 caracteres.', false);
-                return;
-            }
-            try {
-                await createUserWithEmailAndPassword(auth, email, password);
-                registerForm.reset();
-                await showCustomModal('Cadastro realizado com sucesso! Você será logado automaticamente.', false);
-            } catch (error) {
-                let errorMessage;
-                switch (error.code) {
-                    case 'auth/invalid-email':
-                        errorMessage = 'E-mail inválido.';
-                        break;
-                    case 'auth/email-already-in-use':
-                        errorMessage = 'Este e-mail já está em uso.';
-                        break;
-                    default:
-                        errorMessage = `Erro ao registrar: ${error.message}`;
-                }
-                await showCustomModal(errorMessage, false);
-            }
-        });
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = registerForm.email.value;
+            const password = registerForm.password.value;
+            if (password.length < 6) {
+                await showCustomModal('A senha deve ter pelo menos 6 caracteres.', false);
+                return;
+            }
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                registerForm.reset();
+                await showCustomModal('Cadastro realizado com sucesso! Você será logado automaticamente.', false);
+            } catch (error) {
+                let errorMessage;
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                        errorMessage = 'E-mail inválido.';
+                        break;
+                    case 'auth/email-already-in-use':
+                        errorMessage = 'Este e-mail já está em uso.';
+                        break;
+                    default:
+                        errorMessage = `Erro ao registrar: ${error.message}`;
+                }
+                await showCustomModal(errorMessage, false);
+            }
+        });
 
-        logoutBtn.addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-                showCustomModal('Você saiu da sua conta com sucesso.', false);
-            } catch (error) {
-                showCustomModal(`Erro ao sair: ${error.message}`, false);
-            }
-        });
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                showCustomModal('Você saiu da sua conta com sucesso.', false);
+            } catch (error) {
+                showCustomModal(`Erro ao sair: ${error.message}`, false);
+            }
+        });
 
-        showRegisterBtn.addEventListener('click', () => {
-            loginForm.classList.add('hidden');
-            registerForm.classList.remove('hidden');
-            document.querySelector('#auth-content .mt-4 p.hidden').classList.remove('hidden');
-            document.querySelector('#auth-content .mt-4 p:not(.hidden)').classList.add('hidden');
-        });
+        showRegisterBtn.addEventListener('click', () => {
+            loginForm.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+            document.querySelector('#auth-content .mt-4 p.hidden').classList.remove('hidden');
+            document.querySelector('#auth-content .mt-4 p:not(.hidden)').classList.add('hidden');
+        });
 
-        showLoginBtn.addEventListener('click', () => {
-            registerForm.classList.add('hidden');
-            loginForm.classList.remove('hidden');
-            document.querySelector('#auth-content .mt-4 p.hidden').classList.add('hidden');
-            document.querySelector('#auth-content .mt-4 p:not(.hidden)').classList.remove('hidden');
-        });
+        showLoginBtn.addEventListener('click', () => {
+            registerForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            document.querySelector('#auth-content .mt-4 p.hidden').classList.add('hidden');
+            document.querySelector('#auth-content .mt-4 p:not(.hidden)').classList.remove('hidden');
+        });
 
-        // --- Página 1: Cadastro e Visualização ---
-        const renderTransactions = (transactions) => {
-            transactionTableBody.innerHTML = '';
-            transactions.forEach((t) => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-gray-50 transition-colors';
-                const sign = t.type === 'income' ? '+' : '-';
-                const color = t.type === 'income' ? 'text-green-600' : 'text-red-600';
-                const categoryText = t.type === 'expense' && t.category !== 'none' ? `${t.category.charAt(0).toUpperCase() + t.category.slice(1)}` : 'N/A';
-                const date = t.timestamp ? new Date(t.timestamp.toDate()).toLocaleDateString() : 'N/A';
-                
-                tr.innerHTML = `
-                    <td class="whitespace-nowrap">${t.description}</td>
-                    <td class="whitespace-nowrap">${categoryText}</td>
-                    <td class="font-medium ${color} whitespace-nowrap">${sign} R$ ${t.amount.toFixed(2)}</td>
-                    <td class="whitespace-nowrap">${date}</td>
-                    <td class="text-right whitespace-nowrap">
-                        <button onclick="deleteTransaction('${t.id}')" class="text-gray-400 hover:text-red-500 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </td>
-                `;
-                transactionTableBody.appendChild(tr);
-            });
-        };
+        // --- Página 1: Cadastro e Visualização ---
+        const renderTransactions = (transactions) => {
+            transactionTableBody.innerHTML = '';
+            transactions.forEach((t) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition-colors';
+                const sign = t.type === 'income' ? '+' : '-';
+                const color = t.type === 'income' ? 'text-green-600' : 'text-red-600';
+                const categoryText = t.type === 'expense' && t.category !== 'none' ? `${t.category.charAt(0).toUpperCase() + t.category.slice(1)}` : 'N/A';
+                const date = t.timestamp ? new Date(t.timestamp.toDate()).toLocaleDateString() : 'N/A';
+                
+                tr.innerHTML = `
+                    <td class="whitespace-nowrap">${t.description}</td>
+                    <td class="whitespace-nowrap">${categoryText}</td>
+                    <td class="font-medium ${color} whitespace-nowrap">${sign} R$ ${t.amount.toFixed(2)}</td>
+                    <td class="whitespace-nowrap">${date}</td>
+                    <td class="text-right whitespace-nowrap">
+                        <button onclick="deleteTransaction('${t.id}')" class="text-gray-400 hover:text-red-500 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </td>
+                `;
+                transactionTableBody.appendChild(tr);
+            });
+        };
 
-        filterInput.addEventListener('input', () => {
-            const searchTerm = filterInput.value.toLowerCase();
-            const filteredTransactions = allTransactions.filter(t => t.description.toLowerCase().includes(searchTerm));
-            renderTransactions(filteredTransactions);
-        });
+        filterInput.addEventListener('input', () => {
+            const searchTerm = filterInput.value.toLowerCase();
+            const filteredTransactions = allTransactions.filter(t => t.description.toLowerCase().includes(searchTerm));
+            renderTransactions(filteredTransactions);
+        });
 
-        filterCategory.addEventListener('change', () => {
-            const selectedCategory = filterCategory.value;
-            let filteredTransactions;
-            if (selectedCategory === 'all') {
-                filteredTransactions = allTransactions;
-            } else if (selectedCategory === 'income') {
-                filteredTransactions = allTransactions.filter(t => t.type === 'income');
-            } else {
-                filteredTransactions = allTransactions.filter(t => t.type === 'expense' && t.category === selectedCategory);
-            }
-            renderTransactions(filteredTransactions);
-        });
+        filterCategory.addEventListener('change', () => {
+            const selectedCategory = filterCategory.value;
+            let filteredTransactions;
+            if (selectedCategory === 'all') {
+                filteredTransactions = allTransactions;
+            } else if (selectedCategory === 'income') {
+                filteredTransactions = allTransactions.filter(t => t.type === 'income');
+            } else {
+                filteredTransactions = allTransactions.filter(t => t.type === 'expense' && t.category === selectedCategory);
+            }
+            renderTransactions(filteredTransactions);
+        });
 
-        // --- Funções para todas as páginas ---
-        const updateDashboard = (transactions) => {
-            let totalIncome = 0;
-            let totalExpense = 0;
-            const expenseCategories = {};
+        // --- Funções para todas as páginas ---
+        const updateDashboard = (transactions) => {
+            let totalIncome = 0;
+            let totalExpense = 0;
+            const expenseCategories = {};
 
-            transactions.forEach((t) => {
-                if (t.type === 'income') {
-                    totalIncome += t.amount;
-                } else {
-                    totalExpense += t.amount;
-                    if (t.category && t.category !== 'none') {
-                        expenseCategories[t.category] = (expenseCategories[t.category] || 0) + t.amount;
-                    }
-                }
-            });
+            transactions.forEach((t) => {
+                if (t.type === 'income') {
+                    totalIncome += t.amount;
+                } else {
+                    totalExpense += t.amount;
+                    if (t.category && t.category !== 'none') {
+                        expenseCategories[t.category] = (expenseCategories[t.category] || 0) + t.amount;
+                    }
+                }
+            });
 
-            const balance = totalIncome - totalExpense;
-            totalIncomeEl.textContent = `R$ ${totalIncome.toFixed(2)}`;
-            totalExpenseEl.textContent = `R$ ${totalExpense.toFixed(2)}`;
-            currentBalanceEl.textContent = `R$ ${balance.toFixed(2)}`;
-            currentBalanceEl.style.color = balance >= 0 ? '#27ae60' : '#e74c3c';
-            
-            updatePieChart(totalIncome, totalExpense);
-            updateBarChart(expenseCategories);
-        };
+            const balance = totalIncome - totalExpense;
+            totalIncomeEl.textContent = `R$ ${totalIncome.toFixed(2)}`;
+            totalExpenseEl.textContent = `R$ ${totalExpense.toFixed(2)}`;
+            currentBalanceEl.textContent = `R$ ${balance.toFixed(2)}`;
+            currentBalanceEl.style.color = balance >= 0 ? '#27ae60' : '#e74c3c';
+            
+            updatePieChart(totalIncome, totalExpense);
+            updateBarChart(expenseCategories);
+        };
 
-        const updatePieChart = (income, expense) => {
-            if (pieChart) { pieChart.destroy(); }
-            pieChart = new Chart(pieChartCtx, {
-                type: 'pie',
-                data: {
-                    labels: ['Receitas', 'Despesas'],
-                    datasets: [{
-                        data: [income, expense],
-                        backgroundColor: ['#34d399', '#f87171'],
-                        hoverOffset: 4
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        };
+        const updatePieChart = (income, expense) => {
+            if (pieChart) { pieChart.destroy(); }
+            pieChart = new Chart(pieChartCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Receitas', 'Despesas'],
+                    datasets: [{
+                        data: [income, expense],
+                        backgroundColor: ['#34d399', '#f87171'],
+                        hoverOffset: 4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        };
 
-        const updateBarChart = (expenseCategories) => {
-            if (barChart) { barChart.destroy(); }
-            const sortedCategories = Object.entries(expenseCategories).sort(([, a], [, b]) => b - a);
-            const labels = sortedCategories.map(([category]) => category.charAt(0).toUpperCase() + category.slice(1));
-            const data = sortedCategories.map(([, amount]) => amount);
-            const barColors = ['rgba(248, 114, 96, 0.8)', 'rgba(251, 191, 36, 0.8)', 'rgba(96, 165, 250, 0.8)', 'rgba(74, 222, 128, 0.8)', 'rgba(129, 140, 248, 0.8)', 'rgba(236, 72, 153, 0.8)', 'rgba(253, 164, 175, 0.8)', 'rgba(250, 204, 21, 0.8)'];
+        const updateBarChart = (expenseCategories) => {
+            if (barChart) { barChart.destroy(); }
+            const sortedCategories = Object.entries(expenseCategories).sort(([, a], [, b]) => b - a);
+            const labels = sortedCategories.map(([category]) => category.charAt(0).toUpperCase() + category.slice(1));
+            const data = sortedCategories.map(([, amount]) => amount);
+            const barColors = ['rgba(248, 114, 96, 0.8)', 'rgba(251, 191, 36, 0.8)', 'rgba(96, 165, 250, 0.8)', 'rgba(74, 222, 128, 0.8)', 'rgba(129, 140, 248, 0.8)', 'rgba(236, 72, 153, 0.8)', 'rgba(253, 164, 175, 0.8)', 'rgba(250, 204, 21, 0.8)'];
 
-            barChart = new Chart(barChartCtx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Total de Gastos (R$)',
-                        data: data,
-                        backgroundColor: barColors.slice(0, labels.length),
-                        borderWidth: 1
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true }, x: {} }, plugins: { legend: { display: false } } }
-            });
-        };
+            barChart = new Chart(barChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total de Gastos (R$)',
+                        data: data,
+                        backgroundColor: barColors.slice(0, labels.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true }, x: {} }, plugins: { legend: { display: false } } }
+            });
+        };
 
-        // --- Página 3: Análise com IA (Simulação) ---
-        const getAdvice = (category) => {
-            switch (category) {
-                case 'alimentacao': return 'Seu maior gasto é com alimentação. Tente cozinhar mais em casa, levar marmita para o trabalho e evite pedir delivery com frequência. Isso pode gerar uma grande economia no final do mês!';
-                case 'moradia': return 'O gasto com moradia é o mais expressivo. Avalie se o aluguel é proporcional à sua renda. Considere renegociar o valor ou procurar por uma opção mais em conta.';
-                case 'transporte': return 'Seu maior gasto é com transporte. Pense em usar mais transporte público, bicicleta ou caronas. Manter o carro exige muitos gastos com combustível e manutenção.';
-                case 'lazer': return 'O lazer consome a maior parte de seus gastos. Procure por atividades gratuitas ou de baixo custo, como parques, bibliotecas ou eventos culturais. Planeje os gastos com antecedência.';
-                case 'saude': return 'Seu maior gasto é com saúde. Verifique se seu plano de saúde é o mais adequado. Pesquisar por farmácias com preços mais acessíveis e sempre pedir a nota fiscal pode ajudar.';
-                case 'educacao': return 'Educação é seu maior gasto. Verifique se existem bolsas de estudo, descontos ou alternativas de cursos online mais baratos. Invista em conhecimento, mas de forma inteligente.';
-                case 'compras': return 'O gasto com compras é o mais expressivo. Analise o que você compra. Faça uma lista antes de sair e evite compras por impulso. Desative notificações de promoções.';
-                default: return 'Continue registrando seus gastos para receber conselhos personalizados!';
-            }
-        };
+        // --- Página 3: Análise com IA (Simulação) ---
+        const getAdvice = (category) => {
+            switch (category) {
+                case 'alimentacao': return 'Seu maior gasto é com alimentação. Tente cozinhar mais em casa, levar marmita para o trabalho e evite pedir delivery com frequência. Isso pode gerar uma grande economia no final do mês!';
+                case 'moradia': return 'O gasto com moradia é o mais expressivo. Avalie se o aluguel é proporcional à sua renda. Considere renegociar o valor ou procurar por uma opção mais em conta.';
+                case 'transporte': return 'Seu maior gasto é com transporte. Pense em usar mais transporte público, bicicleta ou caronas. Manter o carro exige muitos gastos com combustível e manutenção.';
+                case 'lazer': return 'O lazer consome a maior parte de seus gastos. Procure por atividades gratuitas ou de baixo custo, como parques, bibliotecas ou eventos culturais. Planeje os gastos com antecedência.';
+                case 'saude': return 'Seu maior gasto é com saúde. Verifique se seu plano de saúde é o mais adequado. Pesquisar por farmácias com preços mais acessíveis e sempre pedir a nota fiscal pode ajudar.';
+                case 'educacao': return 'Educação é seu maior gasto. Verifique se existem bolsas de estudo, descontos ou alternativas de cursos online mais baratos. Invista em conhecimento, mas de forma inteligente.';
+                case 'compras': return 'O gasto com compras é o mais expressivo. Analise o que você compra. Faça uma lista antes de sair e evite compras por impulso. Desative notificações de promoções.';
+                default: return 'Continue registrando seus gastos para receber conselhos personalizados!';
+            }
+        };
 
-        const updateIAAnalysis = (transactions) => {
-            const expenses = transactions.filter(t => t.type === 'expense');
-            const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-            const totalExpense = expenses.reduce((sum, t) => sum + t.amount, 0);
-            const expenseCategories = {};
+        const updateIAAnalysis = (transactions) => {
+            const expenses = transactions.filter(t => t.type === 'expense');
+            const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+            const totalExpense = expenses.reduce((sum, t) => sum + t.amount, 0);
+            const expenseCategories = {};
 
-            expenses.forEach(t => {
-                if (t.category && t.category !== 'none') {
-                    expenseCategories[t.category] = (expenseCategories[t.category] || 0) + t.amount;
-                }
-            });
+            expenses.forEach(t => {
+                if (t.category && t.category !== 'none') {
+                    expenseCategories[t.category] = (expenseCategories[t.category] || 0) + t.amount;
+                }
+            });
 
-            const sortedCategories = Object.entries(expenseCategories).sort(([, a], [, b]) => b - a);
-            const maxCategoryEntry = sortedCategories[0];
-            
-            let analysisText = '';
+            const sortedCategories = Object.entries(expenseCategories).sort(([, a], [, b]) => b - a);
+            const maxCategoryEntry = sortedCategories[0];
+            
+            let analysisText = '';
 
-            if (transactions.length === 0) {
-                analysisText = '<p class="text-gray-600">Nenhum dado para analisar. Comece a adicionar suas receitas e despesas.</p>';
-            } else {
-                analysisText += '<h3 class="text-lg font-bold text-gray-800 mb-2">Análise Financeira</h3>';
-                analysisText += '<ul class="list-disc list-inside space-y-2 text-gray-600">';
+            if (transactions.length === 0) {
+                analysisText = '<p class="text-gray-600">Nenhum dado para analisar. Comece a adicionar suas receitas e despesas.</p>';
+            } else {
+                analysisText += '<h3 class="text-lg font-bold text-gray-800 mb-2">Análise Financeira</h3>';
+                analysisText += '<ul class="list-disc list-inside space-y-2 text-gray-600">';
 
-                if (totalIncome > totalExpense) {
-                    analysisText += `<li>Parabéns! Suas receitas superam suas despesas em **R$ ${(totalIncome - totalExpense).toFixed(2)}**. Você está no caminho certo para a estabilidade financeira.</li>`;
-                } else if (totalExpense > totalIncome) {
-                    analysisText += `<li>Atenção! Suas despesas estão **R$ ${(totalExpense - totalIncome).toFixed(2)}** acima das suas receitas. Reavalie seus gastos para evitar dívidas.</li>`;
-                } else {
-                    analysisText += `<li>Suas receitas e despesas estão equilibradas. Mantenha o controle para começar a poupar.</li>`;
-                }
+                if (totalIncome > totalExpense) {
+                    analysisText += `<li>Parabéns! Suas receitas superam suas despesas em **R$ ${(totalIncome - totalExpense).toFixed(2)}**. Você está no caminho certo para a estabilidade financeira.</li>`;
+                } else if (totalExpense > totalIncome) {
+                    analysisText += `<li>Atenção! Suas despesas estão **R$ ${(totalExpense - totalIncome).toFixed(2)}** acima das suas receitas. Reavalie seus gastos para evitar dívidas.</li>`;
+                } else {
+                    analysisText += `<li>Suas receitas e despesas estão equilibradas. Mantenha o controle para começar a poupar.</li>`;
+                }
 
-                if (maxCategoryEntry) {
-                    const [maxCategory, maxAmount] = maxCategoryEntry;
-                    const percentageOfTotal = (maxAmount / totalExpense) * 100;
-                    analysisText += `<li>Seu maior gasto é com **${maxCategory.charAt(0).toUpperCase() + maxCategory.slice(1)}**, representando **${percentageOfTotal.toFixed(1)}%** do total das suas despesas.</li>`;
-                    analysisText += `<li>**Conselho Inteligente:** ${getAdvice(maxCategory)}</li>`;
-                } else {
-                    analysisText += '<li>Registre suas despesas com categorias para uma análise mais profunda.</li>';
-                }
+                if (maxCategoryEntry) {
+                    const [maxCategory, maxAmount] = maxCategoryEntry;
+                    const percentageOfTotal = (maxAmount / totalExpense) * 100;
+                    analysisText += `<li>Seu maior gasto é com **${maxCategory.charAt(0).toUpperCase() + maxCategory.slice(1)}**, representando **${percentageOfTotal.toFixed(1)}%** do total das suas despesas.</li>`;
+                    analysisText += `<li>**Conselho Inteligente:** ${getAdvice(maxCategory)}</li>`;
+                } else {
+                    analysisText += '<li>Registre suas despesas com categorias para uma análise mais profunda.</li>';
+                }
 
-                analysisText += '</ul>';
-            }
+                analysisText += '</ul>';
+            }
 
-            iaAnalysisEl.innerHTML = analysisText;
-        };
+            iaAnalysisEl.innerHTML = analysisText;
+        };
 
-        // --- Adicionar e Deletar Transações ---
-        const addTransaction = async (e) => {
-            e.preventDefault();
-            if (!db || !userId) {
-                await showCustomModal('Erro: Usuário não autenticado. Por favor, recarregue a página.', false);
-                return;
-            }
+        // --- Adicionar e Deletar Transações ---
+        const addTransaction = async (e) => {
+            e.preventDefault();
+            if (!db || !userId) {
+                await showCustomModal('Erro: Usuário não autenticado. Por favor, recarregue a página.', false);
+                return;
+            }
 
-            const description = document.getElementById('description').value;
-            const amount = parseFloat(document.getElementById('amount').value);
-            const type = document.querySelector('input[name="type"]:checked').value;
-            const category = document.getElementById('category').value;
-            
-            if (description && !isNaN(amount) && amount > 0) {
-                const newTransaction = { description, amount, type, category: type === 'expense' ? category : 'N/A', timestamp: new Date() };
-                try {
-                    const transactionsCollectionRef = collection(db, `users/${userId}/transactions`);
-                    await addDoc(transactionsCollectionRef, newTransaction);
-                    document.getElementById('transaction-form').reset();
-                } catch (e) {
-                    console.error("Error adding document: ", e);
-                    await showCustomModal('Erro ao adicionar transação. Por favor, tente novamente.', false);
-                }
-            } else {
-                await showCustomModal('Por favor, preencha todos os campos com valores válidos.', false);
-            }
-        };
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const type = document.querySelector('input[name="type"]:checked').value;
+            const category = document.getElementById('category').value;
+            
+            if (description && !isNaN(amount) && amount > 0) {
+                const newTransaction = { description, amount, type, category: type === 'expense' ? category : 'N/A', timestamp: new Date() };
+                try {
+                    const transactionsCollectionRef = collection(db, `users/${userId}/transactions`);
+                    await addDoc(transactionsCollectionRef, newTransaction);
+                    document.getElementById('transaction-form').reset();
+                } catch (e) {
+                    console.error("Error adding document: ", e);
+                    await showCustomModal('Erro ao adicionar transação. Por favor, tente novamente.', false);
+                }
+            } else {
+                await showCustomModal('Por favor, preencha todos os campos com valores válidos.', false);
+            }
+        };
 
-        window.deleteTransaction = async (docId) => {
-            if (!db || !userId) {
-                await showCustomModal('Erro: Usuário não autenticado. Por favor, recarregue a página.', false);
-                return;
-            }
-            const confirmed = await showCustomModal('Tem certeza que deseja excluir esta transação?', true);
-            if (confirmed) {
-                try {
-                    const docRef = doc(db, `users/${userId}/transactions`, docId);
-                    await deleteDoc(docRef);
-                } catch (e) {
-                    console.error("Error deleting document: ", e);
-                    await showCustomModal('Erro ao excluir transação. Por favor, tente novamente.', false);
-                }
-            }
-        };
-        
-        transactionForm.addEventListener('submit', addTransaction);
-        
-        // --- Página 4: Planejar Objetivos ---
-        const formObjetivoCadastrar = document.getElementById('form-objetivo-cadastrar');
-        const formObjetivoCalcular = document.getElementById('form-objetivo-calcular');
-        const resultadoObjetivoSalvo = document.getElementById('resultado-objetivo-salvo');
-        const resultadoObjetivoCalculado = document.getElementById('resultado-objetivo-calculado');
-        const objetivosContainer = document.getElementById('objetivos-salvos');
+        window.deleteTransaction = async (docId) => {
+            if (!db || !userId) {
+                await showCustomModal('Erro: Usuário não autenticado. Por favor, recarregue a página.', false);
+                return;
+            }
+            const confirmed = await showCustomModal('Tem certeza que deseja excluir esta transação?', true);
+            if (confirmed) {
+                try {
+                    const docRef = doc(db, `users/${userId}/transactions`, docId);
+                    await deleteDoc(docRef);
+                } catch (e) {
+                    console.error("Error deleting document: ", e);
+                    await showCustomModal('Erro ao excluir transação. Por favor, tente novamente.', false);
+                }
+            }
+        };
+        
+        transactionForm.addEventListener('submit', addTransaction);
+        
+        // --- Página 4: Planejar Objetivos ---
+        const formObjetivoCadastrar = document.getElementById('form-objetivo-cadastrar');
+        const formObjetivoCalcular = document.getElementById('form-objetivo-calcular');
+        const resultadoObjetivoCalculado = document.getElementById('resultado-objetivo-calculado');
+        const objetivosContainer = document.getElementById('objetivos-salvos');
 
-        // Função para calcular o progresso do objetivo
-        const calcularProgresso = (objetivo, transactions) => {
-            let totalSaved = 0;
-            // Garantir que a data seja um objeto Date, seja Timestamp do Firestore ou Date
-            const objectiveStartDate = objetivo.startDate.toDate ? objetivo.startDate.toDate() : new Date(objetivo.startDate);
-            
-            transactions.forEach(t => {
-                // Ajustar para garantir que o carimbo de data/hora da transação seja um objeto Date
-                const transactionDate = t.timestamp.toDate ? t.timestamp.toDate() : new Date(t.timestamp);
-                
-                if (t.type === 'income' && transactionDate >= objectiveStartDate) {
-                    totalSaved += t.amount;
-                } else if (t.type === 'expense' && transactionDate >= objectiveStartDate) {
-                    totalSaved -= t.amount;
-                }
-            });
+        const calcularProgresso = (objetivo, transactions) => {
+            let totalSaved = 0;
+            const objectiveStartDate = objetivo.startDate.toDate ? objetivo.startDate.toDate() : new Date(objetivo.startDate);
+            transactions.forEach(t => {
+                const transactionDate = t.timestamp.toDate ? t.timestamp.toDate() : new Date(t.timestamp);
+                if (t.type === 'income' && transactionDate >= objectiveStartDate) {
+                    totalSaved += t.amount;
+                } else if (t.type === 'expense' && transactionDate >= objectiveStartDate) {
+                    totalSaved -= t.amount;
+                }
+            });
+            const progresso = Math.max(0, Math.min(totalSaved, objetivo.valor));
+            const porcentagem = (progresso / objetivo.valor) * 100;
+            return { saved: progresso, percentage: porcentagem };
+        };
 
-            // O progresso não pode ser negativo ou maior que 100%
-            const progresso = Math.max(0, Math.min(totalSaved, objetivo.valor));
-            const porcentagem = (progresso / objetivo.valor) * 100;
-            
-            return {
-                saved: progresso,
-                percentage: porcentagem
-            };
-        };
+        const renderObjectives = (objectives, transactions) => {
+            objetivosContainer.innerHTML = '';
+            if (objectives.length === 0) {
+                objetivosContainer.innerHTML = '<p class="text-gray-600 text-center">Nenhum objetivo cadastrado ainda. Crie um acima!</p>';
+                return;
+            }
+            objectives.forEach(obj => {
+                const { saved, percentage } = calcularProgresso(obj, transactions);
+                const div = document.createElement('div');
+                div.className = 'bg-white p-4 rounded-lg shadow-md space-y-2 relative';
+                div.innerHTML = `
+                    <button onclick="deleteObjective('${obj.id}')" class="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <h4 class="text-lg font-semibold text-gray-800">${obj.nome}</h4>
+                    <p class="text-sm text-gray-600">Valor Total: R$ ${obj.valor.toFixed(2)}</p>
+                    <p class="text-sm text-gray-600">Economizado: R$ ${saved.toFixed(2)}</p>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div class="bg-indigo-600 h-2.5 rounded-full" style="width: ${percentage.toFixed(0)}%"></div>
+                    </div>
+                    <p class="text-xs text-right text-gray-500">${percentage.toFixed(0)}% concluído</p>
+                `;
+                objetivosContainer.appendChild(div);
+            });
+        };
 
-        // Função para renderizar os objetivos salvos
-        const renderObjectives = (objectives, transactions) => {
-            objetivosContainer.innerHTML = '';
-            if (objectives.length === 0) {
-                objetivosContainer.innerHTML = '<p class="text-gray-600 text-center">Nenhum objetivo cadastrado ainda. Crie um acima!</p>';
-                return;
-            }
+        formObjetivoCadastrar.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!db || !userId) {
+                await showCustomModal('Erro: Usuário não autenticado. Por favor, recarregue a página.', false);
+                return;
+            }
 
-            objectives.forEach(obj => {
-                const { saved, percentage } = calcularProgresso(obj, transactions);
-                
-                const div = document.createElement('div');
-                div.className = 'bg-white p-4 rounded-lg shadow-md space-y-2 relative';
-                div.innerHTML = `
-                    <button onclick="deleteObjective('${obj.id}')" class="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                    <h4 class="text-lg font-semibold text-gray-800">${obj.nome}</h4>
-                    <p class="text-sm text-gray-600">Valor Total: R$ ${obj.valor.toFixed(2)}</p>
-                    <p class="text-sm text-gray-600">Economizado: R$ ${saved.toFixed(2)}</p>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div class="bg-indigo-600 h-2.5 rounded-full" style="width: ${percentage.toFixed(0)}%"></div>
-                    </div>
-                    <p class="text-xs text-right text-gray-500">${percentage.toFixed(0)}% concluído</p>
-                `;
-                objetivosContainer.appendChild(div);
-            });
-        };
+            const nome = document.getElementById('nome-objetivo-cadastrar').value;
+            const valor = parseFloat(document.getElementById('valor-objetivo-cadastrar').value);
+            const tempo = parseInt(document.getElementById('tempo-objetivo-cadastrar').value);
+            const startDate = document.getElementById('start-date-cadastrar').value;
 
-        // Lógica para adicionar o objetivo no Firestore
-        formObjetivoCadastrar.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!db || !userId) {
-                await showCustomModal('Erro: Usuário não autenticado. Por favor, recarregue a página.', false);
-                return;
-            }
+            if (nome && !isNaN(valor) && valor > 0 && !isNaN(tempo) && tempo > 0 && startDate) {
+                const newObjective = {
+                    nome,
+                    valor,
+                    tempo,
+                    startDate: Timestamp.fromDate(new Date(startDate))
+                };
 
-            const nome = document.getElementById('nome-objetivo-cadastrar').value;
-            const valor = parseFloat(document.getElementById('valor-objetivo-cadastrar').value);
-            const tempo = parseInt(document.getElementById('tempo-objetivo-cadastrar').value);
-            const startDate = document.getElementById('start-date-cadastrar').value;
+                try {
+                    const objetivosCollectionRef = collection(db, `users/${userId}/objectives`);
+                    await addDoc(objetivosCollectionRef, newObjective);
+                    formObjetivoCadastrar.reset();
+                    await showCustomModal('Objetivo cadastrado com sucesso!', false);
+                } catch (e) {
+                    console.error("Error adding objective: ", e);
+                    await showCustomModal(`Erro ao cadastrar objetivo: ${e.message}`, false);
+                }
+            } else {
+                showCustomModal('Por favor, preencha todos os campos com valores válidos para o objetivo.', false);
+            }
+        });
+        
+        // Lógica para o cálculo de objetivo sem cadastro
+        formObjetivoCalcular.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const valor = parseFloat(document.getElementById('valor-objetivo-calcular').value);
+            const tempo = parseInt(document.getElementById('tempo-objetivo-calcular').value);
+            const taxaAnual = parseFloat(document.getElementById('taxa-juros-calcular').value);
+            const periodo = document.querySelector('input[name="periodo-calcular"]:checked').value;
+            
+            if (!isNaN(valor) && valor > 0 && !isNaN(tempo) && tempo > 0 && !isNaN(taxaAnual)) {
+                let valorPorPeriodo;
+                let taxaJuros;
+                let numPeriodos;
+                let textoPeriodo;
 
-            if (nome && !isNaN(valor) && valor > 0 && !isNaN(tempo) && tempo > 0 && startDate) {
-                // Converte a string de data para um Timestamp do Firestore
-                const newObjective = {
-                    nome,
-                    valor,
-                    tempo,
-                    startDate: Timestamp.fromDate(new Date(startDate))
-                };
+                if (periodo === 'mensal') {
+                    taxaJuros = (taxaAnual / 100) / 12;
+                    numPeriodos = tempo;
+                    textoPeriodo = 'por mês';
+                } else {
+                    taxaJuros = taxaAnual / 100;
+                    numPeriodos = tempo / 12;
+                    textoPeriodo = 'por ano';
+                }
 
-                try {
-                    const objetivosCollectionRef = collection(db, `users/${userId}/objectives`);
-                    await addDoc(objetivosCollectionRef, newObjective);
-                    formObjetivoCadastrar.reset();
-                    await showCustomModal('Objetivo cadastrado com sucesso!', false);
-                } catch (e) {
-                    console.error("Error adding objective: ", e);
-                    await showCustomModal(`Erro ao cadastrar objetivo: ${e.message}`, false);
-                }
-            } else {
-                showCustomModal('Por favor, preencha todos os campos com valores válidos para o objetivo.', false);
-            }
-        });
-        
-        // Lógica para o cálculo de objetivo sem cadastro
-        formObjetivoCalcular.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const valor = parseFloat(document.getElementById('valor-objetivo-calcular').value);
-            const tempo = parseInt(document.getElementById('tempo-objetivo-calcular').value);
-            const taxaAnual = parseFloat(document.getElementById('taxa-juros-calcular').value);
-            const periodo = document.querySelector('input[name="periodo-calcular"]:checked').value;
-            
-            if (!isNaN(valor) && valor > 0 && !isNaN(tempo) && tempo > 0 && !isNaN(taxaAnual)) {
-                let valorPorPeriodo;
-                let taxaJuros;
-                let numPeriodos;
-                let textoPeriodo;
+                if (taxaJuros === 0) {
+                    valorPorPeriodo = valor / numPeriodos;
+                } else {
+                    valorPorPeriodo = valor * (taxaJuros / (Math.pow(1 + taxaJuros, numPeriodos) - 1));
+                }
 
-                if (periodo === 'mensal') {
-                    taxaJuros = (taxaAnual / 100) / 12;
-                    numPeriodos = tempo;
-                    textoPeriodo = 'por mês';
-                } else {
-                    taxaJuros = taxaAnual / 100;
-                    numPeriodos = tempo / 12;
-                    textoPeriodo = 'por ano';
-                }
-
-                if (taxaJuros === 0) {
-                    valorPorPeriodo = valor / numPeriodos;
-                } else {
-                    valorPorPeriodo = valor * (taxaJuros / (Math.pow(1 + taxaJuros, numPeriodos) - 1));
-                }
-
-                document.getElementById('valor-periodo-calculado').textContent = valorPorPeriodo.toFixed(2);
-                document.getElementById('texto-periodo-calculado').textContent = textoPeriodo;
-                resultadoObjetivoCalculado.classList.remove('hidden');
-            } else {
-                showCustomModal('Por favor, preencha todos os campos com valores válidos para o cálculo.', false);
-                resultadoObjetivoCalculado.classList.add('hidden');
-            }
-        });
+                document.getElementById('valor-periodo-calculado').textContent = valorPorPeriodo.toFixed(2);
+                document.getElementById('texto-periodo-calculado').textContent = textoPeriodo;
+                resultadoObjetivoCalculado.classList.remove('hidden');
+            } else {
+                showCustomModal('Por favor, preencha todos os campos com valores válidos para o cálculo.', false);
+                resultadoObjetivoCalculado.classList.add('hidden');
+            }
+        });
 
 
-        // Lógica para deletar um objetivo
-        window.deleteObjective = async (docId) => {
-            if (!db || !userId) {
-                await showCustomModal('Erro: Usuário não autenticado. Por favor, recarregue a página.', false);
-                return;
-            }
-            const confirmed = await showCustomModal('Tem certeza que deseja excluir este objetivo?', true);
-            if (confirmed) {
-                try {
-                    const docRef = doc(db, `users/${userId}/objectives`, docId);
-                    await deleteDoc(docRef);
-                } catch (e) {
-                    console.error("Error deleting objective: ", e);
-                    await showCustomModal('Erro ao excluir objetivo. Por favor, tente novamente.', false);
-                }
-            }
-        };
+        // Lógica para deletar um objetivo
+        window.deleteObjective = async (docId) => {
+            if (!db || !userId) {
+                await showCustomModal('Erro: Usuário não autenticado. Por favor, recarregue a página.', false);
+                return;
+            }
+            const confirmed = await showCustomModal('Tem certeza que deseja excluir este objetivo?', true);
+            if (confirmed) {
+                try {
+                    const docRef = doc(db, `users/${userId}/objectives`, docId);
+                    await deleteDoc(docRef);
+                } catch (e) {
+                    console.error("Error deleting objective: ", e);
+                    await showCustomModal('Erro ao excluir objetivo. Por favor, tente novamente.', false);
+                }
+            }
+        };
 
-        initializeFirebase();
-    </script>
+        initializeFirebase();
+    </script>
 </head>
 <body class="bg-gray-100 p-4 min-h-screen flex items-center justify-center">
 
-    <div id="loading-spinner" class="text-center p-8 bg-white rounded-lg shadow-lg">
-        <h2 class="text-2xl font-bold mb-4">Carregando seu Planner...</h2>
-        <p class="text-gray-600">Aguarde enquanto preparamos seu ambiente financeiro pessoal.</p>
-        <div class="mt-4 flex justify-center items-center">
-            <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-        </div>
-    </div>
+    <div id="loading-spinner" class="text-center p-8 bg-white rounded-lg shadow-lg">
+        <h2 class="text-2xl font-bold mb-4">Carregando seu Planner...</h2>
+        <p class="text-gray-600">Aguarde enquanto preparamos seu ambiente financeiro pessoal.</p>
+        <div class="mt-4 flex justify-center items-center">
+            <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </div>
+    </div>
 
-    <div id="auth-content" class="text-center p-8 bg-white rounded-lg shadow-lg max-w-sm w-full hidden">
-        <h2 class="text-3xl font-bold text-gray-800 mb-6">Acesso ao Planner Financeiro</h2>
-        
-        <form id="login-form" class="space-y-4">
-            <div>
-                <input type="email" name="email" placeholder="E-mail" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-            </div>
-            <div>
-                <input type="password" name="password" placeholder="Senha" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-            </div>
-            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md font-semibold hover:bg-indigo-700 transition-colors">Entrar</button>
-        </form>
+    <div id="auth-content" class="text-center p-8 bg-white rounded-lg shadow-lg max-w-sm w-full hidden">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">Acesso ao Planner Financeiro</h2>
+        
+        <form id="login-form" class="space-y-4">
+            <div>
+                <input type="email" name="email" placeholder="E-mail" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+            </div>
+            <div>
+                <input type="password" name="password" placeholder="Senha" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+            </div>
+            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md font-semibold hover:bg-indigo-700 transition-colors">Entrar</button>
+        </form>
 
-        <form id="register-form" class="space-y-4 hidden">
-            <div>
-                <input type="email" name="email" placeholder="E-mail" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-            </div>
-            <div>
-                <input type="password" name="password" placeholder="Senha (min. 6 caracteres)" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-            </div>
-            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md font-semibold hover:bg-indigo-700 transition-colors">Cadastrar</button>
-        </form>
+        <form id="register-form" class="space-y-4 hidden">
+            <div>
+                <input type="email" name="email" placeholder="E-mail" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+            </div>
+            <div>
+                <input type="password" name="password" placeholder="Senha (min. 6 caracteres)" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+            </div>
+            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md font-semibold hover:bg-indigo-700 transition-colors">Cadastrar</button>
+        </form>
 
-        <div class="mt-4 text-sm text-gray-600">
-            <p>
-                <button id="show-register-btn" class="text-indigo-600 hover:text-indigo-800 transition-colors font-medium">Não tem uma conta? Cadastre-se.</button>
-            </p>
-            <p class="hidden">
-                <button id="show-login-btn" class="text-indigo-600 hover:text-indigo-800 transition-colors font-medium">Já tem uma conta? Entrar.</button>
-            </p>
-        </div>
-    </div>
+        <div class="mt-4 text-sm text-gray-600">
+            <p>
+                <button id="show-register-btn" class="text-indigo-600 hover:text-indigo-800 transition-colors font-medium">Não tem uma conta? Cadastre-se.</button>
+            </p>
+            <p class="hidden">
+                <button id="show-login-btn" class="text-indigo-600 hover:text-indigo-800 transition-colors font-medium">Já tem uma conta? Entrar.</button>
+            </p>
+        </div>
+    </div>
 
-    <div id="main-content" class="container mx-auto p-6 bg-white shadow-xl rounded-2xl max-w-6xl hidden">
-        <div class="border-b border-gray-200 mb-6">
-            <div class="flex flex-col md:flex-row justify-between items-center mb-4">
-                <h1 class="text-3xl font-bold text-gray-800 text-center md:text-left">Planner Financeiro Pessoal</h1>
-                <div class="flex items-center space-x-4 mt-4 md:mt-0">
-                    <p id="user-id-display" class="text-sm text-gray-500 break-all"></p>
-                    <button id="logout-btn" class="bg-red-500 text-white py-1 px-4 rounded-md font-semibold hover:bg-red-600 transition-colors">Sair</button>
-                </div>
-            </div>
-            
-            <nav class="-mb-px flex justify-center space-x-8" aria-label="Tabs">
-                <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page1">Cadastro & Extrato</a>
-                <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page2">Análise Gráfica</a>
-                <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page3">Análise com IA</a>
-                <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page4">Planejar Objetivos</a>
-            </nav>
-        </div>
-        
-        <div id="page1" class="page active grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div>
-                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Novo Lançamento</h2>
-                <div class="p-6 bg-gray-50 rounded-lg shadow-inner mb-6">
-                    <form id="transaction-form" class="space-y-4">
-                        <div>
-                            <label for="description" class="block text-sm font-medium text-gray-700">Descrição:</label>
-                            <input type="text" id="description" placeholder="Ex: Salário, Aluguel" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                        </div>
-                        <div>
-                            <label for="amount" class="block text-sm font-medium text-gray-700">Valor (R$):</label>
-                            <input type="number" id="amount" step="0.01" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                        </div>
-                        <div>
-                            <label for="category" class="block text-sm font-medium text-gray-700">Categoria (para despesas):</label>
-                            <select id="category" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                                <option value="none">N/A</option>
-                                <option value="alimentacao">Alimentação</option>
-                                <option value="moradia">Moradia</option>
-                                <option value="transporte">Transporte</option>
-                                <option value="lazer">Lazer</option>
-                                <option value="saude">Saúde</option>
-                                <option value="educacao">Educação</option>
-                                <option value="compras">Compras</option>
-                                <option value="outros">Outros</option>
-                            </select>
-                        </div>
-                        <div class="flex items-center space-x-4">
-                            <label class="flex items-center"><input type="radio" name="type" value="income" checked class="form-radio text-green-600 focus:ring-green-500"><span class="ml-2 text-sm text-gray-700">Receita</span></label>
-                            <label class="flex items-center"><input type="radio" name="type" value="expense" class="form-radio text-red-600 focus:ring-red-500"><span class="ml-2 text-sm text-gray-700">Despesa</span></label>
-                        </div>
-                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md font-semibold hover:bg-indigo-700 transition-colors">Adicionar Transação</button>
-                    </form>
-                </div>
-            </div>
+    <div id="main-content" class="container mx-auto p-6 bg-white shadow-xl rounded-2xl max-w-6xl hidden">
+        <div class="border-b border-gray-200 mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+                <h1 class="text-3xl font-bold text-gray-800 text-center md:text-left">Planner Financeiro Pessoal</h1>
+                <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                    <p id="user-id-display" class="text-sm text-gray-500 break-all"></p>
+                    <button id="logout-btn" class="bg-red-500 text-white py-1 px-4 rounded-md font-semibold hover:bg-red-600 transition-colors">Sair</button>
+                </div>
+            </div>
+            
+            <nav class="-mb-px flex justify-center space-x-8" aria-label="Tabs">
+                <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page1">Cadastro & Extrato</a>
+                <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page2">Análise Gráfica</a>
+                <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page3">Análise com IA</a>
+                <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page4">Planejar Objetivos</a>
+            </nav>
+        </div>
+        
+        <div id="page1" class="page active grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Novo Lançamento</h2>
+                <div class="p-6 bg-gray-50 rounded-lg shadow-inner mb-6">
+                    <form id="transaction-form" class="space-y-4">
+                        <div>
+                            <label for="description" class="block text-sm font-medium text-gray-700">Descrição:</label>
+                            <input type="text" id="description" placeholder="Ex: Salário, Aluguel" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                        </div>
+                        <div>
+                            <label for="amount" class="block text-sm font-medium text-gray-700">Valor (R$):</label>
+                            <input type="number" id="amount" step="0.01" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                        </div>
+                        <div>
+                            <label for="category" class="block text-sm font-medium text-gray-700">Categoria (para despesas):</label>
+                            <select id="category" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                                <option value="none">N/A</option>
+                                <option value="alimentacao">Alimentação</option>
+                                <option value="moradia">Moradia</option>
+                                <option value="transporte">Transporte</option>
+                                <option value="lazer">Lazer</option>
+                                <option value="saude">Saúde</option>
+                                <option value="educacao">Educação</option>
+                                <option value="compras">Compras</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <label class="flex items-center"><input type="radio" name="type" value="income" checked class="form-radio text-green-600 focus:ring-green-500"><span class="ml-2 text-sm text-gray-700">Receita</span></label>
+                            <label class="flex items-center"><input type="radio" name="type" value="expense" class="form-radio text-red-600 focus:ring-red-500"><span class="ml-2 text-sm text-gray-700">Despesa</span></label>
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md font-semibold hover:bg-indigo-700 transition-colors">Adicionar Transação</button>
+                    </form>
+                </div>
+            </div>
 
-            <div>
-                <div class="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                    <div class="bg-blue-100 p-4 rounded-lg shadow-sm"><p class="text-sm text-blue-800 font-medium">Saldo Atual</p><p id="current-balance" class="text-2xl font-bold text-blue-700 mt-1">R$ 0,00</p></div>
-                    <div class="bg-green-100 p-4 rounded-lg shadow-sm"><p class="text-sm text-green-800 font-medium">Total de Receitas</p><p id="total-income" class="text-2xl font-bold text-green-700 mt-1">R$ 0,00</p></div>
-                    <div class="bg-red-100 p-4 rounded-lg shadow-sm"><p class="text-sm text-red-800 font-medium">Total de Despesas</p><p id="total-expense" class="text-2xl font-bold text-red-700 mt-1">R$ 0,00</p></div>
-                </div>
+            <div>
+                <div class="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <div class="bg-blue-100 p-4 rounded-lg shadow-sm"><p class="text-sm text-blue-800 font-medium">Saldo Atual</p><p id="current-balance" class="text-2xl font-bold text-blue-700 mt-1">R$ 0,00</p></div>
+                    <div class="bg-green-100 p-4 rounded-lg shadow-sm"><p class="text-sm text-green-800 font-medium">Total de Receitas</p><p id="total-income" class="text-2xl font-bold text-green-700 mt-1">R$ 0,00</p></div>
+                    <div class="bg-red-100 p-4 rounded-lg shadow-sm"><p class="text-sm text-red-800 font-medium">Total de Despesas</p><p id="total-expense" class="text-2xl font-bold text-red-700 mt-1">R$ 0,00</p></div>
+                </div>
 
-                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Extrato de Transações</h2>
-                <div class="mb-4 flex flex-col md:flex-row gap-4">
-                    <input type="text" id="filter-input" placeholder="Filtrar por descrição..." class="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                    <select id="filter-category" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                        <option value="all">Todas as Categorias</option>
-                        <option value="income">Receitas</option>
-                        <option value="alimentacao">Alimentação</option>
-                        <option value="moradia">Moradia</option>
-                        <option value="transporte">Transporte</option>
-                        <option value="lazer">Lazer</option>
-                        <option value="saude">Saúde</option>
-                        <option value="educacao">Educação</option>
-                        <option value="compras">Compras</option>
-                        <option value="outros">Outros</option>
-                    </select>
-                </div>
-                <div class="table-container bg-white rounded-lg shadow-inner">
-                    <table class="min-w-full">
-                        <thead>
-                            <tr>
-                                <th>Descrição</th>
-                                <th>Categoria</th>
-                                <th>Valor</th>
-                                <th>Data</th>
-                                <th class="text-right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="transaction-table-body">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Extrato de Transações</h2>
+                <div class="mb-4 flex flex-col md:flex-row gap-4">
+                    <input type="text" id="filter-input" placeholder="Filtrar por descrição..." class="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                    <select id="filter-category" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                        <option value="all">Todas as Categorias</option>
+                        <option value="income">Receitas</option>
+                        <option value="alimentacao">Alimentação</option>
+                        <option value="moradia">Moradia</option>
+                        <option value="transporte">Transporte</option>
+                        <option value="lazer">Lazer</option>
+                        <option value="saude">Saúde</option>
+                        <option value="educacao">Educação</option>
+                        <option value="compras">Compras</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                </div>
+                <div class="table-container bg-white rounded-lg shadow-inner">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th>Categoria</th>
+                                <th>Valor</th>
+                                <th>Data</th>
+                                <th class="text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transaction-table-body">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-        <div id="page2" class="page">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-6 text-center">Análise Financeira Gráfica</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="bg-gray-50 p-6 rounded-lg shadow-inner flex flex-col items-center">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4">Receitas vs. Despesas</h3>
-                    <div class="relative w-full h-80">
-                        <canvas id="finance-chart"></canvas>
-                    </div>
-                </div>
-                <div class="bg-gray-50 p-6 rounded-lg shadow-inner flex flex-col items-center">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4">Despesas por Categoria</h3>
-                    <div class="relative w-full h-80">
-                        <canvas id="expenses-chart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div id="page2" class="page">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 text-center">Análise Financeira Gráfica</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-gray-50 p-6 rounded-lg shadow-inner flex flex-col items-center">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Receitas vs. Despesas</h3>
+                    <div class="relative w-full h-80">
+                        <canvas id="finance-chart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-gray-50 p-6 rounded-lg shadow-inner flex flex-col items-center">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Despesas por Categoria</h3>
+                    <div class="relative w-full h-80">
+                        <canvas id="expenses-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        <div id="page3" class="page">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-6 text-center">Análise de Gastos com IA</h2>
-            <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
-                <div id="ia-analysis">
-                    <p class="text-gray-600">Nenhum dado para analisar. Adicione suas transações para começar!</p>
-                </div>
-            </div>
-            
-            <h3 class="text-xl font-semibold text-gray-700 mt-8 mb-4">Dicas Gerais de Economia</h3>
-            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200 text-yellow-800">
-                <ul class="list-disc list-inside space-y-2">
-                    <li>Crie um orçamento mensal e defina limites para cada categoria.</li>
-                    <li>Guarde uma porcentagem fixa do seu salário assim que ele cair na conta.</li>
-                    <li>Evite compras por impulso e sempre pesquise preços.</li>
-                    <li>Reduza gastos com assinaturas e serviços que você não usa.</li>
-                    <li>Analise seus hábitos de consumo e identifique áreas de melhoria.</li>
-                </ul>
-            </div>
-        </div>
+        <div id="page3" class="page">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 text-center">Análise de Gastos com IA</h2>
+            <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                <div id="ia-analysis">
+                    <p class="text-gray-600">Nenhum dado para analisar. Adicione suas transações para começar!</p>
+                </div>
+            </div>
+            
+            <h3 class="text-xl font-semibold text-gray-700 mt-8 mb-4">Dicas Gerais de Economia</h3>
+            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200 text-yellow-800">
+                <ul class="list-disc list-inside space-y-2">
+                    <li>Crie um orçamento mensal e defina limites para cada categoria.</li>
+                    <li>Guarde uma porcentagem fixa do seu salário assim que ele cair na conta.</li>
+                    <li>Evite compras por impulso e sempre pesquise preços.</li>
+                    <li>Reduza gastos com assinaturas e serviços que você não usa.</li>
+                    <li>Analise seus hábitos de consumo e identifique áreas de melhoria.</li>
+                </ul>
+            </div>
+        </div>
 
-        <div id="page4" class="page">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-6 text-center">Planejar Objetivos Financeiros</h2>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div>
-                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Cadastrar Novo Objetivo</h3>
-                    <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
-                        <form id="form-objetivo-cadastrar" class="space-y-4">
-                            <div>
-                                <label for="nome-objetivo-cadastrar" class="block text-sm font-medium text-gray-700">Qual é o seu objetivo? (Ex: Carro novo, viagem)</label>
-                                <input type="text" id="nome-objetivo-cadastrar" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                            </div>
-                            <div>
-                                <label for="valor-objetivo-cadastrar" class="block text-sm font-medium text-gray-700">Quanto custa? (R$)</label>
-                                <input type="number" id="valor-objetivo-cadastrar" step="0.01" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                            </div>
-                            <div>
-                                <label for="tempo-objetivo-cadastrar" class="block text-sm font-medium text-gray-700">Em quanto tempo você quer atingir esse objetivo? (meses)</label>
-                                <input type="number" id="tempo-objetivo-cadastrar" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                            </div>
-                             <div>
-                                <label for="start-date-cadastrar" class="block text-sm font-medium text-gray-700">Data de Início do Objetivo</label>
-                                <input type="date" id="start-date-cadastrar" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                            </div>
-                            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md font-semibold hover:bg-indigo-700 transition-colors">Cadastrar Objetivo</button>
-                        </form>
-                    </div>
-                </div>
+        <div id="page4" class="page">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 text-center">Planejar Objetivos Financeiros</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Cadastrar Novo Objetivo</h3>
+                    <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                        <form id="form-objetivo-cadastrar" class="space-y-4">
+                            <div>
+                                <label for="nome-objetivo-cadastrar" class="block text-sm font-medium text-gray-700">Qual é o seu objetivo? (Ex: Carro novo, viagem)</label>
+                                <input type="text" id="nome-objetivo-cadastrar" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                            </div>
+                            <div>
+                                <label for="valor-objetivo-cadastrar" class="block text-sm font-medium text-gray-700">Quanto custa? (R$)</label>
+                                <input type="number" id="valor-objetivo-cadastrar" step="0.01" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                            </div>
+                            <div>
+                                <label for="tempo-objetivo-cadastrar" class="block text-sm font-medium text-gray-700">Em quanto tempo você quer atingir esse objetivo? (meses)</label>
+                                <input type="number" id="tempo-objetivo-cadastrar" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                            </div>
+                            <div>
+                                <label for="start-date-cadastrar" class="block text-sm font-medium text-gray-700">Data de Início do Objetivo</label>
+                                <input type="date" id="start-date-cadastrar" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                            </div>
+                            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md font-semibold hover:bg-indigo-700 transition-colors">Cadastrar Objetivo</button>
+                        </form>
+                    </div>
+                </div>
 
-                <div>
-                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Meus Objetivos Salvos</h3>
-                    <div id="objetivos-salvos" class="space-y-4">
-                        </div>
-                </div>
-                
-                <div class="lg:col-span-2">
-                    <h3 class="text-xl font-semibold text-gray-700 mb-4 mt-8">Calculadora de Objetivos (Simulação)</h3>
-                    <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
-                        <form id="form-objetivo-calcular" class="space-y-4">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label for="valor-objetivo-calcular" class="block text-sm font-medium text-gray-700">Valor Total (R$):</label>
-                                    <input type="number" id="valor-objetivo-calcular" step="0.01" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                                </div>
-                                <div>
-                                    <label for="tempo-objetivo-calcular" class="block text-sm font-medium text-gray-700">Tempo (meses):</label>
-                                    <input type="number" id="tempo-objetivo-calcular" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                                </div>
-                                <div>
-                                    <label for="taxa-juros-calcular" class="block text-sm font-medium text-gray-700">Taxa de Juros Anual (%):</label>
-                                    <input type="number" id="taxa-juros-calcular" step="0.01" value="0" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-4">
-                                <label class="flex items-center"><input type="radio" name="periodo-calcular" value="anual" class="form-radio text-indigo-600 focus:ring-indigo-500"><span class="ml-2 text-sm text-gray-700">Economizar Anualmente</span></label>
-                                <label class="flex items-center"><input type="radio" name="periodo-calcular" value="mensal" checked class="form-radio text-indigo-600 focus:ring-indigo-500"><span class="ml-2 text-sm text-gray-700">Economizar Mensalmente</span></label>
-                            </div>
-                            <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-md font-semibold hover:bg-green-700 transition-colors">Calcular Objetivo</button>
-                        </form>
-                        <div id="resultado-objetivo-calculado" class="mt-8 p-6 bg-white rounded-lg shadow-md hidden">
-                            <h3 class="text-xl font-bold text-gray-800 mb-2">Resumo da Simulação</h3>
-                            <p class="text-green-600 text-lg font-bold mt-4">Você precisa economizar: R$ <span id="valor-periodo-calculado" class="font-extrabold"></span> <span id="texto-periodo-calculado" class="font-extrabold"></span></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                                <div>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Meus Objetivos Salvos</h3>
+                    <div id="objetivos-salvos" class="space-y-4">
+                                            </div>
+                </div>
+                
+                                <div class="lg:col-span-2">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4 mt-8">Calculadora de Objetivos (Simulação)</h3>
+                    <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                        <form id="form-objetivo-calcular" class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="valor-objetivo-calcular" class="block text-sm font-medium text-gray-700">Valor Total (R$):</label>
+                                    <input type="number" id="valor-objetivo-calcular" step="0.01" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                                </div>
+                                <div>
+                                    <label for="taxa-juros-calcular" class="block text-sm font-medium text-gray-700">Taxa de Juros Anual (%):</label>
+                                    <input type="number" id="taxa-juros-calcular" step="0.01" value="0" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                                </div>
+                                <div>
+                                    <label for="valor-mensal-calcular" class="block text-sm font-medium text-gray-700">Valor Mensal (R$):</label>
+                                    <input type="number" id="valor-mensal-calcular" step="0.01" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-md font-semibold hover:bg-green-700 transition-colors">Calcular Tempo</button>
+                        </form>
+                        <div id="resultado-objetivo-calculado" class="mt-8 p-6 bg-white rounded-lg shadow-md hidden">
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">Resumo da Simulação</h3>
+                            <p class="text-green-600 text-lg font-bold mt-4">Tempo estimado: <span id="tempo-calculado" class="font-extrabold"></span> <span id="texto-tempo-calculado" class="font-extrabold"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <div id="custom-modal" class="modal-overlay">
-        <div class="modal">
-            <p id="modal-message" class="text-lg text-gray-800 mb-4"></p>
-            <div class="flex justify-center space-x-4">
-                <button id="modal-ok-btn" class="bg-indigo-600 text-white py-2 px-6 rounded-md font-semibold hover:bg-indigo-700 transition-colors">OK</button>
-                <button id="modal-cancel-btn" class="bg-gray-300 text-gray-800 py-2 px-6 rounded-md font-semibold hover:bg-gray-400 transition-colors hidden">Cancelar</button>
-            </div>
-        </div>
-    </div>
+    <div id="custom-modal" class="modal-overlay">
+        <div class="modal">
+            <p id="modal-message" class="text-lg text-gray-800 mb-4"></p>
+            <div class="flex justify-center space-x-4">
+                <button id="modal-ok-btn" class="bg-indigo-600 text-white py-2 px-6 rounded-md font-semibold hover:bg-indigo-700 transition-colors">OK</button>
+                <button id="modal-cancel-btn" class="bg-gray-300 text-gray-800 py-2 px-6 rounded-md font-semibold hover:bg-gray-400 transition-colors hidden">Cancelar</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
