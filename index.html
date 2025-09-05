@@ -482,6 +482,59 @@
         
         transactionForm.addEventListener('submit', addTransaction);
         
+        // --- Página 4: Planejar Objetivos ---
+        const formObjetivo = document.getElementById('form-objetivo');
+        const resultadoObjetivo = document.getElementById('resultado-objetivo');
+
+        formObjetivo.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const nome = document.getElementById('nome-objetivo').value;
+            const valor = parseFloat(document.getElementById('valor-objetivo').value);
+            const tempo = parseInt(document.getElementById('tempo-objetivo').value);
+            const taxaAnual = parseFloat(document.getElementById('taxa-juros').value);
+            const periodo = document.querySelector('input[name="periodo"]:checked').value;
+            
+            // Verifica se os valores são válidos
+            if (nome && !isNaN(valor) && valor > 0 && !isNaN(tempo) && tempo > 0 && !isNaN(taxaAnual) && taxaAnual >= 0) {
+                
+                let valorPorPeriodo;
+                let taxaJuros;
+                let numPeriodos;
+                let textoPeriodo;
+
+                if (periodo === 'mensal') {
+                    // Para economia mensal, o cálculo é feito sobre a taxa de juros mensal
+                    taxaJuros = (taxaAnual / 100) / 12; // Converte para decimal e mensal
+                    numPeriodos = tempo; // Meses
+                    textoPeriodo = 'por mês';
+                } else { // anual
+                    // Para economia anual, o cálculo é feito sobre a taxa de juros anual
+                    taxaJuros = taxaAnual / 100; // Converte para decimal
+                    numPeriodos = tempo / 12; // Anos
+                    textoPeriodo = 'por ano';
+                }
+
+                // Fórmula para o valor do pagamento (PMT) de uma anuidade de valor futuro (FV)
+                if (taxaJuros === 0) {
+                    valorPorPeriodo = valor / numPeriodos;
+                } else {
+                    valorPorPeriodo = valor * (taxaJuros / (Math.pow(1 + taxaJuros, numPeriodos) - 1));
+                }
+
+                document.getElementById('resumo-nome-objetivo').textContent = nome;
+                document.getElementById('resumo-valor-objetivo').textContent = valor.toFixed(2);
+                document.getElementById('resumo-tempo-objetivo').textContent = tempo;
+                document.getElementById('valor-periodo-objetivo').textContent = valorPorPeriodo.toFixed(2);
+                document.getElementById('texto-periodo-objetivo').textContent = textoPeriodo;
+
+                resultadoObjetivo.classList.remove('hidden');
+            } else {
+                showCustomModal('Por favor, preencha todos os campos com valores válidos.', false);
+                resultadoObjetivo.classList.add('hidden');
+            }
+        });
+
         initializeFirebase();
     </script>
 </head>
@@ -550,6 +603,7 @@
                 <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page1">Cadastro & Extrato</a>
                 <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page2">Análise Gráfica</a>
                 <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page3">Análise com IA</a>
+                <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page4">Planejar Objetivos</a>
             </nav>
         </div>
         
@@ -667,7 +721,46 @@
                     <li>Guarde uma porcentagem fixa do seu salário assim que ele cair na conta.</li>
                     <li>Evite compras por impulso e sempre pesquise preços.</li>
                     <li>Reduza gastos com assinaturas e serviços que você não usa.</li>
+                    <li>Analise seus hábitos de consumo e identifique áreas de melhoria.</li>
                 </ul>
+            </div>
+        </div>
+
+        <!-- Conteúdo da Página 4 -->
+        <div id="page4" class="page">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 text-center">Planejar Objetivos Financeiros</h2>
+            <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                <form id="form-objetivo" class="space-y-4">
+                    <div>
+                        <label for="nome-objetivo" class="block text-sm font-medium text-gray-700">Qual é o seu objetivo? (Ex: Carro novo, viagem)</label>
+                        <input type="text" id="nome-objetivo" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                    </div>
+                    <div>
+                        <label for="valor-objetivo" class="block text-sm font-medium text-gray-700">Quanto custa? (R$)</label>
+                        <input type="number" id="valor-objetivo" step="0.01" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                    </div>
+                    <div>
+                        <label for="tempo-objetivo" class="block text-sm font-medium text-gray-700">Em quantos meses você quer atingir esse objetivo?</label>
+                        <input type="number" id="tempo-objetivo" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                    </div>
+                    <div>
+                        <label for="taxa-juros" class="block text-sm font-medium text-gray-700">Taxa de Juros Anual (%)</label>
+                        <input type="number" id="taxa-juros" step="0.01" value="0" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <label class="flex items-center"><input type="radio" name="periodo" value="anual" class="form-radio text-indigo-600 focus:ring-indigo-500"><span class="ml-2 text-sm text-gray-700">Economizar Anualmente</span></label>
+                        <label class="flex items-center"><input type="radio" name="periodo" value="mensal" checked class="form-radio text-indigo-600 focus:ring-indigo-500"><span class="ml-2 text-sm text-gray-700">Economizar Mensalmente</span></label>
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md font-semibold hover:bg-indigo-700 transition-colors">Calcular</button>
+                </form>
+
+                <div id="resultado-objetivo" class="mt-8 p-6 bg-white rounded-lg shadow-md hidden">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Resumo do seu Objetivo</h3>
+                    <p class="text-gray-700 mb-1">Objetivo: <span id="resumo-nome-objetivo" class="font-semibold"></span></p>
+                    <p class="text-gray-700 mb-1">Valor Total: R$ <span id="resumo-valor-objetivo" class="font-semibold"></span></p>
+                    <p class="text-gray-700 mb-1">Tempo: <span id="resumo-tempo-objetivo" class="font-semibold"></span> meses</p>
+                    <p class="text-green-600 text-lg font-bold mt-4">Você precisa economizar: R$ <span id="valor-periodo-objetivo" class="font-extrabold"></span> <span id="texto-periodo-objetivo" class="font-extrabold"></span></p>
+                </div>
             </div>
         </div>
     </div>
