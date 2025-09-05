@@ -1,4 +1,4 @@
-DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -504,17 +504,7 @@ DOCTYPE html>
         // --- Página 4: Planejar Objetivos ---
         const formObjetivo = document.getElementById('form-objetivo');
         const resultadoObjetivo = document.getElementById('resultado-objetivo');
-        const tipoAplicacaoSelect = document.getElementById('tipo-aplicacao');
-        const taxaJurosDisplay = document.getElementById('taxa-juros-display');
         const objetivosContainer = document.getElementById('objetivos-salvos');
-
-        // Taxas de juros anuais de exemplo
-        const TAXAS_APLICACAO = {
-            poupanca: 6.17, // Taxa de juros anual da poupança (aproximado)
-            tesouro_selic: 10.0, // Exemplo de taxa anual do Tesouro Direto Selic
-            cdb: 11.0, // Exemplo de taxa anual de um CDB
-            renda_variavel: 0.0, // Renda variável, taxa de 0 para não complicar o cálculo, mas é importante explicar o risco
-        };
 
         // Função para calcular o progresso do objetivo
         const calcularProgresso = (objetivo, transactions) => {
@@ -570,18 +560,6 @@ DOCTYPE html>
             });
         };
 
-        // Função para atualizar a taxa de juros exibida
-        const atualizarTaxaJuros = () => {
-            const tipo = tipoAplicacaoSelect.value;
-            taxaJurosDisplay.value = TAXAS_APLICACAO[tipo];
-        };
-
-        // Adiciona o ouvinte para a mudança no tipo de aplicação
-        tipoAplicacaoSelect.addEventListener('change', atualizarTaxaJuros);
-
-        // Define a taxa inicial quando a página carrega
-        atualizarTaxaJuros();
-
         // Lógica para adicionar o objetivo no Firestore
         formObjetivo.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -590,7 +568,7 @@ DOCTYPE html>
             const valor = parseFloat(document.getElementById('valor-objetivo').value);
             const tempo = parseInt(document.getElementById('tempo-objetivo').value);
             const startDate = new Date(document.getElementById('start-date').value);
-            const taxaAnual = parseFloat(taxaJurosDisplay.value);
+            const taxaAnual = parseFloat(document.getElementById('taxa-juros').value);
             const periodo = document.querySelector('input[name="periodo"]:checked').value;
             
             if (nome && !isNaN(valor) && valor > 0 && !isNaN(tempo) && tempo > 0 && !isNaN(taxaAnual) && !isNaN(startDate.getTime())) {
@@ -631,7 +609,6 @@ DOCTYPE html>
                     const objetivosCollectionRef = collection(db, `users/${userId}/objectives`);
                     await addDoc(objetivosCollectionRef, novoObjetivo);
                     formObjetivo.reset();
-                    atualizarTaxaJuros(); // Reseta a taxa de juros para o padrão
                     await showCustomModal('Objetivo cadastrado com sucesso!', false);
                 } catch (e) {
                     console.error("Error adding objective: ", e);
@@ -878,17 +855,8 @@ DOCTYPE html>
                                 <input type="date" id="start-date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
                             </div>
                             <div>
-                                <label for="tipo-aplicacao" class="block text-sm font-medium text-gray-700">Tipo de Aplicação</label>
-                                <select id="tipo-aplicacao" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                                    <option value="poupanca">Poupança</option>
-                                    <option value="tesouro_selic">Tesouro Direto Selic</option>
-                                    <option value="cdb">CDB</option>
-                                    <option value="renda_variavel">Renda Variável</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="taxa-juros-display" class="block text-sm font-medium text-gray-700">Taxa de Juros Anual (%)</label>
-                                <input type="number" id="taxa-juros-display" step="0.01" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 bg-gray-200 cursor-not-allowed">
+                                <label for="taxa-juros" class="block text-sm font-medium text-gray-700">Taxa de Juros Anual (%)</label>
+                                <input type="number" id="taxa-juros" step="0.01" value="0" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
                             </div>
                             <div class="flex items-center space-x-4">
                                 <label class="flex items-center"><input type="radio" name="periodo" value="anual" class="form-radio text-indigo-600 focus:ring-indigo-500"><span class="ml-2 text-sm text-gray-700">Economizar Anualmente</span></label>
