@@ -485,28 +485,6 @@
         // --- Página 4: Planejar Objetivos ---
         const formObjetivo = document.getElementById('form-objetivo');
         const resultadoObjetivo = document.getElementById('resultado-objetivo');
-        const tipoAplicacaoSelect = document.getElementById('tipo-aplicacao');
-        const taxaJurosDisplay = document.getElementById('taxa-juros-display');
-
-        // Taxas de juros anuais de exemplo
-        const TAXAS_APLICACAO = {
-            poupanca: 6.17, // Taxa de juros anual da poupança (aproximado)
-            tesouro_selic: 10.0, // Exemplo de taxa anual do Tesouro Direto Selic
-            cdb: 11.0, // Exemplo de taxa anual de um CDB
-            renda_variavel: 0.0, // Renda variável, taxa de 0 para não complicar o cálculo, mas é importante explicar o risco
-        };
-
-        // Função para atualizar a taxa de juros exibida
-        const atualizarTaxaJuros = () => {
-            const tipo = tipoAplicacaoSelect.value;
-            taxaJurosDisplay.value = TAXAS_APLICACAO[tipo];
-        };
-
-        // Adiciona o ouvinte para a mudança no tipo de aplicação
-        tipoAplicacaoSelect.addEventListener('change', atualizarTaxaJuros);
-
-        // Define a taxa inicial quando a página carrega
-        atualizarTaxaJuros();
 
         formObjetivo.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -514,7 +492,7 @@
             const nome = document.getElementById('nome-objetivo').value;
             const valor = parseFloat(document.getElementById('valor-objetivo').value);
             const tempo = parseInt(document.getElementById('tempo-objetivo').value);
-            const taxaAnual = parseFloat(taxaJurosDisplay.value); // Usa o valor do campo de exibição
+            const taxaAnual = parseFloat(document.getElementById('taxa-juros').value);
             const periodo = document.querySelector('input[name="periodo"]:checked').value;
             
             // Verifica se os valores são válidos
@@ -762,21 +740,12 @@
                         <input type="number" id="valor-objetivo" step="0.01" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
                     </div>
                     <div>
-                        <label for="tempo-objetivo" class="block text-sm font-medium text-gray-700">Em quanto tempo você quer atingir esse objetivo? (meses)</label>
+                        <label for="tempo-objetivo" class="block text-sm font-medium text-gray-700">Em quantos meses você quer atingir esse objetivo?</label>
                         <input type="number" id="tempo-objetivo" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
                     </div>
                     <div>
-                        <label for="tipo-aplicacao" class="block text-sm font-medium text-gray-700">Tipo de Aplicação</label>
-                        <select id="tipo-aplicacao" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                            <option value="poupanca">Poupança</option>
-                            <option value="tesouro_selic">Tesouro Direto Selic</option>
-                            <option value="cdb">CDB</option>
-                            <option value="renda_variavel">Renda Variável</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="taxa-juros-display" class="block text-sm font-medium text-gray-700">Taxa de Juros Anual (%)</label>
-                        <input type="number" id="taxa-juros-display" step="0.01" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 bg-gray-200 cursor-not-allowed">
+                        <label for="taxa-juros" class="block text-sm font-medium text-gray-700">Taxa de Juros Anual (%)</label>
+                        <input type="number" id="taxa-juros" step="0.01" value="0" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
                     </div>
                     <div class="flex items-center space-x-4">
                         <label class="flex items-center"><input type="radio" name="periodo" value="anual" class="form-radio text-indigo-600 focus:ring-indigo-500"><span class="ml-2 text-sm text-gray-700">Economizar Anualmente</span></label>
