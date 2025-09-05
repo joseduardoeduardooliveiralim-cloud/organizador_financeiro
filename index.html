@@ -65,7 +65,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, query, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        
+        
         // Substitua com suas credenciais do Firebase para usar no GitHub Pages.
         const firebaseConfig = {
             apiKey: "AIzaSyDdZ4NnOsYCn8Mbt4QkY8SiEjnvbwH_ucY",
@@ -76,7 +76,7 @@
             appId: "1:481092436809:web:f63a2a16bd35fd864c5098",
             measurementId: "G-LM7P7ZB655"
         };
-        
+        
         let db, auth, userId;
         let unsubscribeFromTransactions;
         let unsubscribeFromObjectives;
@@ -147,7 +147,7 @@
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                
+                
                 onAuthStateChanged(auth, (user) => {
                     loadingSpinner.classList.add('hidden');
                     if (user) {
@@ -168,16 +168,14 @@
                 showCustomModal(`Erro de Conexão: ${error.message}`, false);
             }
         };
-        
+        
         const setupFirestoreListeners = () => {
-            // Unsubscribe de listeners anteriores, se existirem
             if (unsubscribeFromTransactions) unsubscribeFromTransactions();
             if (unsubscribeFromObjectives) unsubscribeFromObjectives();
 
             const transactionsCollectionRef = collection(db, `users/${userId}/transactions`);
             const objectivesCollectionRef = collection(db, `users/${userId}/objectives`);
-            
-            // Listener para transações
+            
             const qTransactions = query(transactionsCollectionRef, orderBy("timestamp", "desc"));
             unsubscribeFromTransactions = onSnapshot(qTransactions, (snapshot) => {
                 allTransactions = [];
@@ -192,7 +190,6 @@
                 console.error("Error listening to transactions:", error);
             });
 
-            // Listener para objetivos
             const qObjectives = query(objectivesCollectionRef, orderBy("startDate", "desc"));
             unsubscribeFromObjectives = onSnapshot(qObjectives, (snapshot) => {
                 allObjectives = [];
@@ -205,7 +202,6 @@
             });
         };
 
-        // --- Autenticação ---
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = loginForm.email.value;
@@ -291,7 +287,7 @@
                 const color = t.type === 'income' ? 'text-green-600' : 'text-red-600';
                 const categoryText = t.type === 'expense' && t.category !== 'none' ? `${t.category.charAt(0).toUpperCase() + t.category.slice(1)}` : 'N/A';
                 const date = t.timestamp ? new Date(t.timestamp.toDate()).toLocaleDateString() : 'N/A';
-                
+                
                 tr.innerHTML = `
                     <td class="whitespace-nowrap">${t.description}</td>
                     <td class="whitespace-nowrap">${categoryText}</td>
@@ -350,7 +346,7 @@
             totalExpenseEl.textContent = `R$ ${totalExpense.toFixed(2)}`;
             currentBalanceEl.textContent = `R$ ${balance.toFixed(2)}`;
             currentBalanceEl.style.color = balance >= 0 ? '#27ae60' : '#e74c3c';
-            
+            
             updatePieChart(totalIncome, totalExpense);
             updateBarChart(expenseCategories);
         };
@@ -421,7 +417,7 @@
 
             const sortedCategories = Object.entries(expenseCategories).sort(([, a], [, b]) => b - a);
             const maxCategoryEntry = sortedCategories[0];
-            
+            
             let analysisText = '';
 
             if (transactions.length === 0) {
@@ -453,7 +449,6 @@
             iaAnalysisEl.innerHTML = analysisText;
         };
 
-        // --- Adicionar e Deletar Transações ---
         const addTransaction = async (e) => {
             e.preventDefault();
             if (!db || !userId) {
@@ -465,7 +460,7 @@
             const amount = parseFloat(document.getElementById('amount').value);
             const type = document.querySelector('input[name="type"]:checked').value;
             const category = document.getElementById('category').value;
-            
+            
             if (description && !isNaN(amount) && amount > 0) {
                 const newTransaction = { description, amount, type, category: type === 'expense' ? category : 'N/A', timestamp: new Date() };
                 try {
@@ -497,9 +492,9 @@
                 }
             }
         };
-        
+        
         transactionForm.addEventListener('submit', addTransaction);
-        
+        
         // --- Página 4: Planejar Objetivos ---
         const formObjetivoCadastrar = document.getElementById('form-objetivo-cadastrar');
         const formObjetivoCalcular = document.getElementById('form-objetivo-calcular');
@@ -583,7 +578,7 @@
                 showCustomModal('Por favor, preencha todos os campos com valores válidos para o objetivo.', false);
             }
         });
-        
+        
         // Lógica para o cálculo de objetivo sem cadastro
         formObjetivoCalcular.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -591,7 +586,7 @@
             const tempo = parseInt(document.getElementById('tempo-objetivo-calcular').value);
             const taxaAnual = parseFloat(document.getElementById('taxa-juros-calcular').value);
             const periodo = document.querySelector('input[name="periodo-calcular"]:checked').value;
-            
+            
             if (!isNaN(valor) && valor > 0 && !isNaN(tempo) && tempo > 0 && !isNaN(taxaAnual)) {
                 let valorPorPeriodo;
                 let taxaJuros;
@@ -623,8 +618,6 @@
             }
         });
 
-
-        // Lógica para deletar um objetivo
         window.deleteObjective = async (docId) => {
             if (!db || !userId) {
                 await showCustomModal('Erro: Usuário não autenticado. Por favor, recarregue a página.', false);
@@ -660,7 +653,7 @@
 
     <div id="auth-content" class="text-center p-8 bg-white rounded-lg shadow-lg max-w-sm w-full hidden">
         <h2 class="text-3xl font-bold text-gray-800 mb-6">Acesso ao Planner Financeiro</h2>
-        
+        
         <form id="login-form" class="space-y-4">
             <div>
                 <input type="email" name="email" placeholder="E-mail" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
@@ -700,7 +693,7 @@
                     <button id="logout-btn" class="bg-red-500 text-white py-1 px-4 rounded-md font-semibold hover:bg-red-600 transition-colors">Sair</button>
                 </div>
             </div>
-            
+            
             <nav class="-mb-px flex justify-center space-x-8" aria-label="Tabs">
                 <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page1">Cadastro & Extrato</a>
                 <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page2">Análise Gráfica</a>
@@ -708,7 +701,7 @@
                 <a href="#" class="nav-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors" data-page="page4">Planejar Objetivos</a>
             </nav>
         </div>
-        
+        
         <div id="page1" class="page active grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
                 <h2 class="text-2xl font-semibold text-gray-700 mb-4">Novo Lançamento</h2>
@@ -811,7 +804,7 @@
                     <p class="text-gray-600">Nenhum dado para analisar. Adicione suas transações para começar!</p>
                 </div>
             </div>
-            
+            
             <h3 class="text-xl font-semibold text-gray-700 mt-8 mb-4">Dicas Gerais de Economia</h3>
             <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200 text-yellow-800">
                 <ul class="list-disc list-inside space-y-2">
@@ -855,11 +848,11 @@
                                 <div>
                     <h3 class="text-xl font-semibold text-gray-700 mb-4">Meus Objetivos Salvos</h3>
                     <div id="objetivos-salvos" class="space-y-4">
-                                            </div>
+                    </div>
                 </div>
-                
+                
                                 <div class="lg:col-span-2">
-                    <h3 class="text-xl font-semibold text-gray-700 mb-4 mt-8">Calculadora de Objetivos (Simulação)</h3>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4 mt-8">Calculadora de Economia (Simulação)</h3>
                     <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
                         <form id="form-objetivo-calcular" class="space-y-4">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -868,19 +861,23 @@
                                     <input type="number" id="valor-objetivo-calcular" step="0.01" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
                                 </div>
                                 <div>
+                                    <label for="tempo-objetivo-calcular" class="block text-sm font-medium text-gray-700">Tempo desejado (meses):</label>
+                                    <input type="number" id="tempo-objetivo-calcular" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                                </div>
+                                <div>
                                     <label for="taxa-juros-calcular" class="block text-sm font-medium text-gray-700">Taxa de Juros Anual (%):</label>
                                     <input type="number" id="taxa-juros-calcular" step="0.01" value="0" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
                                 </div>
-                                <div>
-                                    <label for="valor-mensal-calcular" class="block text-sm font-medium text-gray-700">Valor Mensal (R$):</label>
-                                    <input type="number" id="valor-mensal-calcular" step="0.01" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                                </div>
                             </div>
-                            <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-md font-semibold hover:bg-green-700 transition-colors">Calcular Tempo</button>
+                            <div class="flex items-center space-x-4">
+                                <label class="flex items-center"><input type="radio" name="periodo-calcular" value="anual" class="form-radio text-indigo-600 focus:ring-indigo-500"><span class="ml-2 text-sm text-gray-700">Economia Anual</span></label>
+                                <label class="flex items-center"><input type="radio" name="periodo-calcular" value="mensal" checked class="form-radio text-indigo-600 focus:ring-indigo-500"><span class="ml-2 text-sm text-gray-700">Economia Mensal</span></label>
+                            </div>
+                            <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-md font-semibold hover:bg-green-700 transition-colors">Calcular Valor</button>
                         </form>
                         <div id="resultado-objetivo-calculado" class="mt-8 p-6 bg-white rounded-lg shadow-md hidden">
                             <h3 class="text-xl font-bold text-gray-800 mb-2">Resumo da Simulação</h3>
-                            <p class="text-green-600 text-lg font-bold mt-4">Tempo estimado: <span id="tempo-calculado" class="font-extrabold"></span> <span id="texto-tempo-calculado" class="font-extrabold"></span></p>
+                            <p class="text-green-600 text-lg font-bold mt-4">Você precisa economizar: R$ <span id="valor-periodo-calculado" class="font-extrabold"></span> <span id="texto-periodo-calculado" class="font-extrabold"></span></p>
                         </div>
                     </div>
                 </div>
